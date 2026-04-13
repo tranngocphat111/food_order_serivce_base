@@ -1,11 +1,13 @@
 export { };
 
 declare global {
+    // Generic backend response (for compatibility)
     interface IBackendRes<T> {
         error?: string | string[];
         message: string;
         statusCode: number | string;
         data?: T;
+        success?: boolean;
     }
 
     interface IModelPaginate<T> {
@@ -18,16 +20,28 @@ declare global {
         result: T[]
     }
 
+    // User Service Response
+    interface ILoginResponse {
+        userId: number;
+        username: string;
+        email: string;
+        token: string;
+        success: boolean;
+        message: string;
+    }
+
     interface ILogin {
         access_token: string;
-        user: {
-            email: string;
-            phone: string;
-            fullName: string;
-            role: string;
-            avatar: string;
-            id: string;
-        }
+        user: IUser;
+    }
+
+    interface IRegisterResponse {
+        userId: number;
+        username: string;
+        email: string;
+        token: string;
+        success: boolean;
+        message: string;
     }
 
     interface IRegister {
@@ -37,12 +51,15 @@ declare global {
     }
 
     interface IUser {
+        id: number;
+        username: string;
         email: string;
-        phone: string;
         fullName: string;
         role: string;
-        avatar: string;
-        id: string;
+        active: boolean;
+        createdAt?: string;
+        phone?: string;
+        avatar?: string;
     }
 
     interface IFetchAccount {
@@ -50,15 +67,15 @@ declare global {
     }
 
     interface IUserTable {
-        _id: string;
+        id: number;
+        username: string;
         fullName: string;
         email: string;
-        phone: string;
+        phone?: string;
         role: string;
-        avatar: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
+        active: boolean;
+        createdAt: string;
+        updatedAt?: string;
     }
 
     interface IResponseImport {
@@ -67,48 +84,108 @@ declare global {
         detail: any;
     }
 
-    interface IBookTable {
-        _id: string;
-        thumbnail: string;
-        slider: string[];
-        mainText: string;
-        author: string;
-        price: number;
-        sold: number;
-        quantity: number;
-        category: string;
-        createdAt: Date;
-        updatedAt: Date;
-    }
-
-    interface ICart {
-        _id: string;
-        quantity: number;
-        detail: IBookTable;
-    }
-
-    interface IHistory {
-        _id: string;
+    // Food Entity (from FoodServices)
+    interface IFood {
+        id: number;
         name: string;
-        type: string;
-        email: string;
-        phone: string;
-        userId: string;
-        detail:
-        {
-            bookName: string;
-            quantity: number;
-            _id: string;
-        }[];
-        totalPrice: number;
-        createdAt: Date;
-        updatedAt: Date;
-        paymentStatus: string;
-        paymentRef: string;
+        description: string;
+        price: number;
+        categoryId: number;
+        imageUrl: string | null;
+        isAvailable: boolean;
+        stockQty: number;
+        createdAt: string;
+        updatedAt: string;
     }
 
-    interface IOrderTable extends IHistory {
-
+    // Category for filtering
+    interface ICategory {
+        id: number;
+        name: string;
     }
 
+    // Cart item for food ordering
+    interface ICart {
+        id: number;
+        quantity: number;
+        detail: IFood;
+    }
+
+    // Order Item for creating orders
+    interface IOrderItem {
+        foodId: number;
+        quantity: number;
+    }
+
+    // Create Order Request
+    interface ICreateOrderRequest {
+        userId: number;
+        items: IOrderItem[];
+        note?: string;
+        deliveryAddress: string;
+    }
+
+    // Order Item Response (from order-service)
+    interface IOrderItemResponse {
+        foodId: number;
+        foodName: string;
+        price: number;
+        quantity: number;
+    }
+
+    // Order Response
+    interface IOrderResponse {
+        id: number;
+        orderCode: string;
+        userId: number;
+        userName: string;
+        items: IOrderItemResponse[];
+        totalAmount: number;
+        status: string;
+        note: string;
+        deliveryAddress: string;
+        createdAt: string;
+        updatedAt: string;
+    }
+
+    // Payment Methods
+    type PaymentMethod = 'COD' | 'BANKING';
+
+    // Payment Request
+    interface IPaymentRequest {
+        orderId: number;
+        userId: number;
+        paymentMethod: PaymentMethod;
+    }
+
+    // Payment Response
+    interface IPaymentResponse {
+        paymentId: number;
+        orderId: number;
+        userId: number;
+        paymentMethod: PaymentMethod;
+        paymentStatus: 'SUCCESS' | 'FAILED';
+        paidAt: string;
+        message: string;
+    }
+
+    // Order Status
+    type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'DELIVERED' | 'CANCELLED';
+
+    // Order Table (for admin management)
+    interface IOrderTable extends IOrderResponse { }
+
+    // History (user's order history)
+    interface IHistory extends IOrderResponse { }
+
+    // Legacy support - keeping IBookTable as alias for IFood during transition
+    interface IBookTable extends IFood {
+        _id?: string;
+        thumbnail?: string;
+        slider?: string[];
+        mainText?: string;
+        author?: string;
+        sold?: number;
+        category?: string;
+    }
 }

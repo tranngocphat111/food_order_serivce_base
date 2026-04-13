@@ -5,9 +5,8 @@ import { useEffect, useState } from 'react';
 import { Input } from 'antd';
 import { useCurrentApp } from '@/components/context/app.context';
 import type { FormProps } from 'antd';
-import { createOrderAPI, getVNPayUrlAPI } from '@/services/api';
+import { createOrderAPI, createPaymentAPI } from '@/services/api';
 import { isMobile } from 'react-device-detect';
-import { v4 as uuidv4 } from 'uuid';
 
 const { TextArea } = Input;
 
@@ -17,6 +16,7 @@ type FieldType = {
     fullName: string;
     phone: string;
     address: string;
+    note: string;
     method: UserMethod;
 };
 
@@ -37,7 +37,7 @@ const Payment = (props: IProps) => {
         if (user) {
             form.setFieldsValue({
                 fullName: user.fullName,
-                phone: user.phone,
+                phone: user.phone || '',
                 method: "COD"
             })
         }
@@ -56,71 +56,85 @@ const Payment = (props: IProps) => {
     }, [carts]);
 
 
-    const handleRemoveBook = (_id: string) => {
+    const handleRemoveFood = (id: number) => {
         const cartStorage = localStorage.getItem("carts");
         if (cartStorage) {
-            //update
-            const carts = JSON.parse(cartStorage) as ICart[];
-            const newCarts = carts.filter(item => item._id !== _id)
+            const cartsData = JSON.parse(cartStorage) as ICart[];
+            const newCarts = cartsData.filter(item => item.id !== id);
             localStorage.setItem("carts", JSON.stringify(newCarts));
-            //sync React Context
             setCarts(newCarts);
         }
     }
 
     const handlePlaceOrder: FormProps<FieldType>['onFinish'] = async (values) => {
-        const { address, fullName, method, phone } = values;
+        const { address, fullName, method, phone, note } = values;
 
-        const detail = carts.map(item => ({
-            _id: item._id,
-            quantity: item.quantity,
-            bookName: item.detail.mainText
-        }))
-
-        setIsSubmit(true);
-        let res = null;
-        const paymentRef = uuidv4();
-
-        if (method === "COD") {
-            res = await createOrderAPI(
-                fullName, address, phone, totalPrice, method, detail
-            );
-        } else {
-            res = await createOrderAPI(
-                fullName, address, phone, totalPrice, method, detail,
-                paymentRef
-            );
+        if (!user) {
+            notification.error({
+                message: "Lỗi",
+                description: "Vui lòng đăng nhập để đặt hàng",
+                duration: 5
+            });
+            return;
         }
 
+        // Build order items for order-service
+        const items: IOrderItem[] = carts.map(item => ({
+            foodId: item.id,
+            quantity: item.quantity
+        }));
 
-        if (res?.data) {
-            localStorage.removeItem("carts");
-            setCarts([]);
-            if (method === "COD") {
-                message.success('Mua hàng thành công!');
-                setCurrentStep(2);
-            } else {
-                //redirect to vnpay
-                const r = await getVNPayUrlAPI(totalPrice, "vn", paymentRef);
-                if (r.data) {
-                    window.location.href = r.data.url;
+        setIsSubmit(true);
+
+        try {
+            // Step 1: Create order via order-service
+            const orderRes = await createOrderAPI(
+                user.id,
+                items,
+                address,
+                note || ''
+            ) as any;
+
+            if (orderRes && (orderRes.id || orderRes.orderId)) {
+                const orderId = orderRes.id || orderRes.orderId;
+
+                // Step 2: Create payment via payment-notification-service
+                const paymentRes = await createPaymentAPI(
+                    orderId,
+                    user.id,
+                    method
+                ) as any;
+
+                if (paymentRes && (paymentRes.paymentId || paymentRes.paymentStatus === 'SUCCESS')) {
+                    // Success - clear cart
+                    localStorage.removeItem("carts");
+                    setCarts([]);
+                    message.success('Đặt hàng thành công!');
+                    setCurrentStep(2);
                 } else {
-                    notification.error({
-                        message: "Có lỗi xảy ra",
-                        description:
-                            r.message && Array.isArray(r.message) ? r.message[0] : r.message,
+                    // Payment failed but order was created
+                    notification.warning({
+                        message: "Cảnh báo",
+                        description: "Đơn hàng đã được tạo nhưng thanh toán thất bại. Vui lòng thanh toán sau.",
                         duration: 5
-                    })
+                    });
+                    localStorage.removeItem("carts");
+                    setCarts([]);
+                    setCurrentStep(2);
                 }
+            } else {
+                notification.error({
+                    message: "Có lỗi xảy ra",
+                    description: orderRes?.message || 'Không thể tạo đơn hàng',
+                    duration: 5
+                });
             }
-
-        } else {
+        } catch (error: any) {
             notification.error({
                 message: "Có lỗi xảy ra",
-                description:
-                    res.message && Array.isArray(res.message) ? res.message[0] : res.message,
+                description: error?.message || 'Không thể kết nối đến server',
                 duration: 5
-            })
+            });
         }
 
         setIsSubmit(false);
@@ -131,7 +145,7 @@ const Payment = (props: IProps) => {
             <Row gutter={[20, 20]}>
                 <Col md={16} xs={24}>
                     {carts?.map((item, index) => {
-                        const currentBookPrice = item?.detail?.price ?? 0;
+                        const currentFoodPrice = item?.detail?.price ?? 0;
                         return (
                             <div className='order-book' key={`index-${index}`}
                                 style={isMobile ? { flexDirection: 'column' } : {}}
@@ -139,12 +153,18 @@ const Payment = (props: IProps) => {
                                 {!isMobile ?
                                     <>
                                         <div className='book-content'>
-                                            <img src={`${import.meta.env.VITE_BACKEND_URL}/images/book/${item?.detail?.thumbnail}`} />
+                                            <img 
+                                                src={`https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${item?.detail?.imageUrl}` || '/default-food.png'} 
+                                                alt={item?.detail?.name}
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = '/default-food.png';
+                                                }}
+                                            />
                                             <div className='title'>
-                                                {item?.detail?.mainText}
+                                                {item?.detail?.name}
                                             </div>
                                             <div className='price'>
-                                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentBookPrice)}
+                                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentFoodPrice)}
                                             </div>
                                         </div>
                                         <div className='action'>
@@ -152,33 +172,39 @@ const Payment = (props: IProps) => {
                                                 Số lượng: {item?.quantity}
                                             </div>
                                             <div className='sum'>
-                                                Tổng:  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentBookPrice * (item?.quantity ?? 0))}
+                                                Tổng:  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentFoodPrice * (item?.quantity ?? 0))}
                                             </div>
                                             <DeleteTwoTone
                                                 style={{ cursor: "pointer" }}
-                                                onClick={() => handleRemoveBook(item._id)}
+                                                onClick={() => handleRemoveFood(item.id)}
                                                 twoToneColor="#eb2f96"
                                             />
                                         </div>
                                     </>
                                     :
                                     <>
-                                        <div>{item?.detail?.mainText}</div>
+                                        <div>{item?.detail?.name}</div>
                                         <div className='book-content ' style={{ width: "100%" }}>
-                                            <img src={`${import.meta.env.VITE_BACKEND_URL}/images/book/${item?.detail?.thumbnail}`} />
+                                            <img 
+                                                src={`https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${item?.detail?.imageUrl}` || '/default-food.png'} 
+                                                alt={item?.detail?.name}
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = '/default-food.png';
+                                                }}
+                                            />
                                             <div className='action' >
                                                 <div className='quantity'>
                                                     Số lượng: {item?.quantity}
                                                 </div>
                                                 <DeleteTwoTone
                                                     style={{ cursor: "pointer" }}
-                                                    onClick={() => handleRemoveBook(item._id)}
+                                                    onClick={() => handleRemoveFood(item.id)}
                                                     twoToneColor="#eb2f96"
                                                 />
                                             </div>
                                         </div>
                                         <div className='sum'>
-                                            Tổng:  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentBookPrice * (item?.quantity ?? 0))}
+                                            Tổng:  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentFoodPrice * (item?.quantity ?? 0))}
                                         </div>
                                     </>
                                 }
@@ -209,7 +235,7 @@ const Payment = (props: IProps) => {
                                 <Radio.Group>
                                     <Space direction="vertical">
                                         <Radio value={"COD"}>Thanh toán khi nhận hàng</Radio>
-                                        <Radio value={"BANKING"}>Thanh toán bằng ví VNPAY</Radio>
+                                        <Radio value={"BANKING"}>Chuyển khoản ngân hàng</Radio>
                                     </Space>
                                 </Radio.Group>
                             </Form.Item>
@@ -241,7 +267,14 @@ const Payment = (props: IProps) => {
                                     { required: true, message: 'Địa chỉ không được để trống!' },
                                 ]}
                             >
-                                <TextArea rows={4} />
+                                <TextArea rows={3} />
+                            </Form.Item>
+
+                            <Form.Item<FieldType>
+                                label="Ghi chú"
+                                name="note"
+                            >
+                                <TextArea rows={2} placeholder="Ghi chú thêm (không bắt buộc)" />
                             </Form.Item>
 
                             <div className='calculate'>

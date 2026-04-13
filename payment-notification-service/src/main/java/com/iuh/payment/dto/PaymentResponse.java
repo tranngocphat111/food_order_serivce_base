@@ -2,15 +2,21 @@ package com.iuh.payment.dto;
 
 import com.iuh.payment.domain.PaymentMethod;
 import com.iuh.payment.domain.PaymentStatus;
+import java.math.BigDecimal;
 import java.time.Instant;
 
 public class PaymentResponse {
 
     private Long paymentId;
+    private String paymentCode;
     private Long orderId;
+    private String orderCode;
     private Long userId;
+    private BigDecimal amount;
     private PaymentMethod paymentMethod;
     private PaymentStatus paymentStatus;
+    private String transactionRef;
+    private String note;
     private Instant paidAt;
     private String message;
 
@@ -22,6 +28,14 @@ public class PaymentResponse {
         this.paymentId = paymentId;
     }
 
+    public String getPaymentCode() {
+        return paymentCode;
+    }
+
+    public void setPaymentCode(String paymentCode) {
+        this.paymentCode = paymentCode;
+    }
+
     public Long getOrderId() {
         return orderId;
     }
@@ -30,12 +44,28 @@ public class PaymentResponse {
         this.orderId = orderId;
     }
 
+    public String getOrderCode() {
+        return orderCode;
+    }
+
+    public void setOrderCode(String orderCode) {
+        this.orderCode = orderCode;
+    }
+
     public Long getUserId() {
         return userId;
     }
 
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
     }
 
     public PaymentMethod getPaymentMethod() {
@@ -52,6 +82,22 @@ public class PaymentResponse {
 
     public void setPaymentStatus(PaymentStatus paymentStatus) {
         this.paymentStatus = paymentStatus;
+    }
+
+    public String getTransactionRef() {
+        return transactionRef;
+    }
+
+    public void setTransactionRef(String transactionRef) {
+        this.transactionRef = transactionRef;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
     }
 
     public Instant getPaidAt() {

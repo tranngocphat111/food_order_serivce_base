@@ -1,6 +1,6 @@
 import BookDetail from "@/components/client/book/book.detail";
 import BookLoader from "@/components/client/book/book.loader";
-import { getBookByIdAPI } from "@/services/api";
+import { getFoodByIdAPI } from "@/services/api";
 import { App } from "antd";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -8,34 +8,41 @@ import { useParams } from "react-router-dom";
 const BookPage = () => {
     let { id } = useParams();
     const { notification } = App.useApp();
-    const [currentBook, setCurrentBook] = useState<IBookTable | null>(null);
-    const [isLoadingBook, setIsLoadingBook] = useState<boolean>(true);
+    const [currentFood, setCurrentFood] = useState<IFood | null>(null);
+    const [isLoadingFood, setIsLoadingFood] = useState<boolean>(true);
 
     useEffect(() => {
         if (id) {
-            const fetchBookById = async () => {
-                setIsLoadingBook(true);
-                const res = await getBookByIdAPI(id);
-                if (res && res.data) {
-                    setCurrentBook(res.data);
-                } else {
+            const fetchFoodById = async () => {
+                setIsLoadingFood(true);
+                try {
+                    const res = await getFoodByIdAPI(Number(id)) as any;
+                    if (res && (res.id || res.data?.id)) {
+                        setCurrentFood(res.id ? res : res.data);
+                    } else {
+                        notification.error({
+                            message: 'Đã có lỗi xảy ra',
+                            description: res?.message || 'Không tìm thấy món ăn'
+                        });
+                    }
+                } catch (error: any) {
                     notification.error({
                         message: 'Đã có lỗi xảy ra',
-                        description: res.message
-                    })
+                        description: error?.message || 'Không thể kết nối đến server'
+                    });
                 }
-                setIsLoadingBook(false);
+                setIsLoadingFood(false);
             }
-            fetchBookById();
+            fetchFoodById();
         }
     }, [id])
     return (
         <div>
-            {isLoadingBook ?
+            {isLoadingFood ?
                 <BookLoader />
                 :
                 <BookDetail
-                    currentBook={currentBook}
+                    currentFood={currentFood}
                 />
             }
         </div>

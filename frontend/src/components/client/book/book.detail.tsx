@@ -9,13 +9,13 @@ import { useCurrentApp } from '@/components/context/app.context';
 import { Link, useNavigate } from 'react-router-dom';
 
 interface IProps {
-    currentBook: IBookTable | null;
+    currentFood: IFood | null;
 }
 
 type UserAction = "MINUS" | "PLUS"
 
 const BookDetail = (props: IProps) => {
-    const { currentBook } = props;
+    const { currentFood } = props;
     const [imageGallery, setImageGallery] = useState<{
         original: string;
         thumbnail: string;
@@ -33,95 +33,31 @@ const BookDetail = (props: IProps) => {
     const { message } = App.useApp();
     const navigate = useNavigate();
 
-    // const images = [
-    //     {
-    //         original: 'https://picsum.photos/id/1018/1000/600/',
-    //         thumbnail: 'https://picsum.photos/id/1018/250/150/',
-    //         originalClass: "original-image",
-    //         thumbnailClass: "thumbnail-image"
-    //     },
-    //     {
-    //         original: 'https://picsum.photos/id/1015/1000/600/',
-    //         thumbnail: 'https://picsum.photos/id/1015/250/150/',
-    //         originalClass: "original-image",
-    //         thumbnailClass: "thumbnail-image"
-    //     },
-    //     {
-    //         original: 'https://picsum.photos/id/1019/1000/600/',
-    //         thumbnail: 'https://picsum.photos/id/1019/250/150/',
-    //         originalClass: "original-image",
-    //         thumbnailClass: "thumbnail-image"
-    //     },
-    //     {
-    //         original: 'https://picsum.photos/id/1018/1000/600/',
-    //         thumbnail: 'https://picsum.photos/id/1018/250/150/',
-    //         originalClass: "original-image",
-    //         thumbnailClass: "thumbnail-image"
-    //     },
-    //     {
-    //         original: 'https://picsum.photos/id/1015/1000/600/',
-    //         thumbnail: 'https://picsum.photos/id/1015/250/150/',
-    //         originalClass: "original-image",
-    //         thumbnailClass: "thumbnail-image"
-    //     },
-    //     {
-    //         original: 'https://picsum.photos/id/1019/1000/600/',
-    //         thumbnail: 'https://picsum.photos/id/1019/250/150/',
-    //         originalClass: "original-image",
-    //         thumbnailClass: "thumbnail-image"
-    //     },
-    //     {
-    //         original: 'https://picsum.photos/id/1018/1000/600/',
-    //         thumbnail: 'https://picsum.photos/id/1018/250/150/',
-    //         originalClass: "original-image",
-    //         thumbnailClass: "thumbnail-image"
-    //     },
-    //     {
-    //         original: 'https://picsum.photos/id/1015/1000/600/',
-    //         thumbnail: 'https://picsum.photos/id/1015/250/150/',
-    //         originalClass: "original-image",
-    //         thumbnailClass: "thumbnail-image"
-    //     },
-    //     {
-    //         original: 'https://picsum.photos/id/1019/1000/600/',
-    //         thumbnail: 'https://picsum.photos/id/1019/250/150/',
-    //         originalClass: "original-image",
-    //         thumbnailClass: "thumbnail-image"
-    //     },
-    // ];
-
     useEffect(() => {
-        if (currentBook) {
-            //build images 
+        if (currentFood) {
+            // Build images from food imageUrl
             const images = [];
-            if (currentBook.thumbnail) {
-                images.push(
-                    {
-                        original: `${import.meta.env.VITE_BACKEND_URL}/images/book/${currentBook.thumbnail}`,
-                        thumbnail: `${import.meta.env.VITE_BACKEND_URL}/images/book/${currentBook.thumbnail}`,
-                        originalClass: "original-image",
-                        thumbnailClass: "thumbnail-image"
-                    },
-                )
+            if (currentFood.imageUrl) {
+                images.push({
+                    original: `https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${currentFood.imageUrl}`,
+                    thumbnail: `https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${currentFood.imageUrl}`,
+                    originalClass: "original-image",
+                    thumbnailClass: "thumbnail-image"
+                });
+            } else {
+                // Default placeholder image
+                images.push({
+                    original: '/default-food.png',
+                    thumbnail: '/default-food.png',
+                    originalClass: "original-image",
+                    thumbnailClass: "thumbnail-image"
+                });
             }
-            if (currentBook.slider) {
-                currentBook.slider?.map(item => {
-                    images.push(
-                        {
-                            original: `${import.meta.env.VITE_BACKEND_URL}/images/book/${item}`,
-                            thumbnail: `${import.meta.env.VITE_BACKEND_URL}/images/book/${item}`,
-                            originalClass: "original-image",
-                            thumbnailClass: "thumbnail-image"
-                        },
-                    )
-                })
-            }
-            setImageGallery(images)
+            setImageGallery(images);
         }
-    }, [currentBook])
+    }, [currentFood])
 
     const handleOnClickImage = () => {
-        //get current index onClick
         setIsOpenModalGallery(true);
         setCurrentIndex(refGallery?.current?.getCurrentIndex() ?? 0)
     }
@@ -131,15 +67,15 @@ const BookDetail = (props: IProps) => {
             if (currentQuantity - 1 <= 0) return;
             setCurrentQuantity(currentQuantity - 1);
         }
-        if (type === 'PLUS' && currentBook) {
-            if (currentQuantity === +currentBook.quantity) return; //max
+        if (type === 'PLUS' && currentFood) {
+            if (currentQuantity === currentFood.stockQty) return; // max
             setCurrentQuantity(currentQuantity + 1);
         }
     }
 
     const handleChangeInput = (value: string) => {
         if (!isNaN(+value)) {
-            if (+value > 0 && currentBook && +value < +currentBook.quantity) {
+            if (+value > 0 && currentFood && +value <= currentFood.stockQty) {
                 setCurrentQuantity(+value);
             }
         }
@@ -150,46 +86,47 @@ const BookDetail = (props: IProps) => {
             message.error("Bạn cần đăng nhập để thực hiện tính năng này.")
             return;
         }
-        //update localStorage
+
+        if (!currentFood?.isAvailable) {
+            message.error("Món ăn hiện không còn hàng.")
+            return;
+        }
+
+        // Update localStorage
         const cartStorage = localStorage.getItem("carts");
-        if (cartStorage && currentBook) {
-            //update
+        if (cartStorage && currentFood) {
             const carts = JSON.parse(cartStorage) as ICart[];
 
-            //check exist
-            let isExistIndex = carts.findIndex(c => c._id === currentBook?._id);
+            // Check if exists
+            let isExistIndex = carts.findIndex(c => c.id === currentFood?.id);
             if (isExistIndex > -1) {
-                carts[isExistIndex].quantity =
-                    carts[isExistIndex].quantity + currentQuantity;
+                carts[isExistIndex].quantity = carts[isExistIndex].quantity + currentQuantity;
             } else {
                 carts.push({
                     quantity: currentQuantity,
-                    _id: currentBook._id,
-                    detail: currentBook
+                    id: currentFood.id,
+                    detail: currentFood
                 })
             }
 
             localStorage.setItem("carts", JSON.stringify(carts));
-
-            //sync React Context
             setCarts(carts);
         } else {
-            //create
-            const data = [{
-                _id: currentBook?._id!,
+            // Create new cart
+            const data: ICart[] = [{
+                id: currentFood?.id!,
                 quantity: currentQuantity,
-                detail: currentBook!
+                detail: currentFood!
             }]
             localStorage.setItem("carts", JSON.stringify(data))
-
-            //sync React Context
             setCarts(data);
         }
 
         if (isBuyNow) {
             navigate("/order")
-        } else
-            message.success("Thêm sản phẩm vào giỏ hàng thành công.")
+        } else {
+            message.success("Thêm món ăn vào giỏ hàng thành công.")
+        }
     }
 
     return (
@@ -201,9 +138,8 @@ const BookDetail = (props: IProps) => {
                         {
                             title: <Link to={"/"}>Trang Chủ</Link>,
                         },
-
                         {
-                            title: 'Xem chi tiết sách',
+                            title: 'Chi tiết món ăn',
                         },
                     ]}
                 />
@@ -213,11 +149,11 @@ const BookDetail = (props: IProps) => {
                             <ImageGallery
                                 ref={refGallery}
                                 items={imageGallery}
-                                showPlayButton={false} //hide play button
-                                showFullscreenButton={false} //hide fullscreen button
-                                renderLeftNav={() => <></>} //left arrow === <> </>
-                                renderRightNav={() => <></>}//right arrow === <> </>
-                                slideOnThumbnailOver={true}  //onHover => auto scroll images
+                                showPlayButton={false}
+                                showFullscreenButton={false}
+                                renderLeftNav={() => <></>}
+                                renderRightNav={() => <></>}
+                                slideOnThumbnailOver={true}
                                 onClick={() => handleOnClickImage()}
                             />
                         </Col>
@@ -226,31 +162,48 @@ const BookDetail = (props: IProps) => {
                                 <ImageGallery
                                     ref={refGallery}
                                     items={imageGallery}
-                                    showPlayButton={false} //hide play button
-                                    showFullscreenButton={false} //hide fullscreen button
-                                    renderLeftNav={() => <></>} //left arrow === <> </>
-                                    renderRightNav={() => <></>}//right arrow === <> </>
+                                    showPlayButton={false}
+                                    showFullscreenButton={false}
+                                    renderLeftNav={() => <></>}
+                                    renderRightNav={() => <></>}
                                     showThumbnails={false}
                                 />
                             </Col>
                             <Col span={24}>
-                                <div className='author'>Tác giả: <a href='#'>{currentBook?.author}</a> </div>
-                                <div className='title'>{currentBook?.mainText}</div>
+                                <div className='author'>Danh mục: <a href='#'>Món {currentFood?.categoryId}</a></div>
+                                <div className='title'>{currentFood?.name}</div>
                                 <div className='rating'>
                                     <Rate value={5} disabled style={{ color: '#ffce3d', fontSize: 12 }} />
                                     <span className='sold'>
                                         <Divider type="vertical" />
-                                        Đã bán {currentBook?.sold ?? 0}</span>
+                                        Còn {currentFood?.stockQty ?? 0} món
+                                    </span>
                                 </div>
                                 <div className='price'>
                                     <span className='currency'>
-                                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentBook?.price ?? 0)}
+                                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentFood?.price ?? 0)}
                                     </span>
                                 </div>
+                                {currentFood?.description && (
+                                    <div className='delivery'>
+                                        <div>
+                                            <span className='left'>Mô tả</span>
+                                            <span className='right'>{currentFood.description}</span>
+                                        </div>
+                                    </div>
+                                )}
                                 <div className='delivery'>
                                     <div>
                                         <span className='left'>Vận chuyển</span>
                                         <span className='right'>Miễn phí vận chuyển</span>
+                                    </div>
+                                </div>
+                                <div className='delivery'>
+                                    <div>
+                                        <span className='left'>Trạng thái</span>
+                                        <span className='right' style={{ color: currentFood?.isAvailable ? 'green' : 'red' }}>
+                                            {currentFood?.isAvailable ? 'Còn hàng' : 'Hết hàng'}
+                                        </span>
                                     </div>
                                 </div>
                                 <div className='quantity'>
@@ -262,13 +215,21 @@ const BookDetail = (props: IProps) => {
                                     </span>
                                 </div>
                                 <div className='buy'>
-                                    <button className='cart' onClick={() => handleAddToCart()}>
+                                    <button 
+                                        className='cart' 
+                                        onClick={() => handleAddToCart()}
+                                        disabled={!currentFood?.isAvailable}
+                                    >
                                         <BsCartPlus className='icon-cart' />
                                         <span>Thêm vào giỏ hàng</span>
                                     </button>
                                     <button
                                         onClick={() => handleAddToCart(true)}
-                                        className='now'>Mua ngay</button>
+                                        className='now'
+                                        disabled={!currentFood?.isAvailable}
+                                    >
+                                        Mua ngay
+                                    </button>
                                 </div>
                             </Col>
                         </Col>
@@ -280,7 +241,7 @@ const BookDetail = (props: IProps) => {
                 setIsOpen={setIsOpenModalGallery}
                 currentIndex={currentIndex}
                 items={imageGallery}
-                title={currentBook?.mainText ?? ""}
+                title={currentFood?.name ?? ""}
             />
         </div>
     )

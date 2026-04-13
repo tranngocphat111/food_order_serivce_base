@@ -35,7 +35,7 @@ public class AppConfig implements WebMvcConfigurer {
         String[] methods = allowedMethods.split(",");
 
         registry.addMapping("/**")
-                .allowedOrigins(origins)
+                .allowedOriginPatterns("*")
                 .allowedMethods(methods)
                 .allowedHeaders(allowedHeaders)
                 .allowCredentials(allowCredentials)

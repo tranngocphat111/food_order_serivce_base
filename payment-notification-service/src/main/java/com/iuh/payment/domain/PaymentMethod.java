@@ -2,5 +2,7 @@ package com.iuh.payment.domain;
 
 public enum PaymentMethod {
     COD,
-    BANKING
+    BANKING,
+    MOMO,
+    ZALOPAY
 }

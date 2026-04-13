@@ -1,4 +1,4 @@
-import { fetchAccountAPI } from "@/services/api";
+import { fetchAccountAPI, verifyTokenAPI } from "@/services/api";
 import { createContext, useContext, useEffect, useState } from "react";
 import PacmanLoader from "react-spinners/PacmanLoader";
 
@@ -28,16 +28,41 @@ export const AppProvider = (props: TProps) => {
 
     useEffect(() => {
         const fetchAccount = async () => {
-            const res = await fetchAccountAPI();
-            const carts = localStorage.getItem("carts");
-            if (res.data) {
-                setUser(res.data.user);
-                setIsAuthenticated(true);
-                if (carts) {
-                    setCarts(JSON.parse(carts))
+            const token = localStorage.getItem('access_token');
+            const userStr = localStorage.getItem('user');
+            const cartsStr = localStorage.getItem("carts");
+
+            if (token && userStr) {
+                try {
+                    // Verify token with backend
+                    const isValid = await verifyTokenAPI(token);
+                    
+                    if (isValid === true || (isValid as any)?.data === true) {
+                        const savedUser = JSON.parse(userStr);
+                        setUser(savedUser);
+                        setIsAuthenticated(true);
+                        
+                        if (cartsStr) {
+                            setCarts(JSON.parse(cartsStr));
+                        }
+                    } else {
+                        // Token invalid, clear storage
+                        localStorage.removeItem('access_token');
+                        localStorage.removeItem('user');
+                    }
+                } catch (error) {
+                    // If verification fails, still try to use local data
+                    // (backend might be temporarily unavailable)
+                    const savedUser = JSON.parse(userStr);
+                    setUser(savedUser);
+                    setIsAuthenticated(true);
+                    
+                    if (cartsStr) {
+                        setCarts(JSON.parse(cartsStr));
+                    }
                 }
             }
-            setIsAppLoading(false)
+            setIsAppLoading(false);
         }
 
         fetchAccount();

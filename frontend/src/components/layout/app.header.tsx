@@ -77,7 +77,7 @@ const AppHeader = (props: IProps) => {
                     {carts?.map((book, index) => {
                         return (
                             <div className='book' key={`book-${index}`}>
-                                <img src={`${import.meta.env.VITE_BACKEND_URL}/images/book/${book?.detail?.thumbnail}`} />
+                                <img src={`https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${book?.detail?.imageUrl}`} />
                                 <div>{book?.detail?.mainText}</div>
                                 <div className='price'>
                                     {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(book?.detail?.price ?? 0)}

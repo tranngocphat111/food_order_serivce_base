@@ -32,7 +32,7 @@ const DetailBook = (props: IProps) => {
                     uid: uuidv4(),
                     name: dataViewDetail.thumbnail,
                     status: 'done',
-                    url: `${import.meta.env.VITE_BACKEND_URL}/images/book/${dataViewDetail.thumbnail}`,
+                    url: `https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${dataViewDetail.imageUrl}`,
                 }
             }
             if (dataViewDetail.slider && dataViewDetail.slider.length > 0) {
@@ -41,7 +41,7 @@ const DetailBook = (props: IProps) => {
                         uid: uuidv4(),
                         name: item,
                         status: 'done',
-                        url: `${import.meta.env.VITE_BACKEND_URL}/images/book/${item}`,
+                        url: `https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${item}`,
                     })
                 })
             }

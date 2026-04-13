@@ -22,10 +22,8 @@ import LayoutAdmin from 'components/layout/layout.admin';
 import OrderPage from 'pages/client/order';
 import HistoryPage from 'pages/client/history';
 
-import enUS from 'antd/locale/en_US';
 import viVN from 'antd/locale/vi_VN';
 import ReturnURLPage from 'components/client/order/return.url';
-import { GoogleOAuthProvider } from '@react-oauth/google';
 
 const router = createBrowserRouter([
   {
@@ -35,6 +33,10 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <HomePage />
+      },
+      {
+        path: "/food/:id",
+        element: <BookPage />,
       },
       {
         path: "/book/:id",
@@ -79,6 +81,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <DashBoardPage />
+          </ProtectedRoute>
+        )
+      },
+      {
+        path: "food",
+        element: (
+          <ProtectedRoute>
+            <ManageBookPage />
           </ProtectedRoute>
         )
       },
@@ -133,11 +143,9 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App>
       <AppProvider>
-        <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-          <ConfigProvider locale={enUS}>
-            <RouterProvider router={router} />
-          </ConfigProvider>
-        </GoogleOAuthProvider>
+        <ConfigProvider locale={viVN}>
+          <RouterProvider router={router} />
+        </ConfigProvider>
       </AppProvider>
     </App>
   </StrictMode>,

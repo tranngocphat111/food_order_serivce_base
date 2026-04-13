@@ -212,6 +212,40 @@ public class UserService {
     }
 
     /**
+     * Refresh access token based on current bearer token.
+     * Frontend currently does not send a dedicated refresh token, so we re-issue
+     * a new access token when the provided token is validly signed and belongs to an active user.
+     */
+    public String refreshAccessToken(String token) {
+        if (token == null || token.isBlank()) {
+            return null;
+        }
+
+        if (tokenBlacklistService.isTokenBlacklisted(token)) {
+            return null;
+        }
+
+        String username;
+        try {
+            username = jwtTokenProvider.getUsernameFromTokenAllowExpired(token);
+        } catch (Exception e) {
+            log.warn("Refresh token rejected: {}", e.getMessage());
+            return null;
+        }
+
+        if (username == null || username.isBlank()) {
+            return null;
+        }
+
+        User user = userRepository.findByUsername(username).orElse(null);
+        if (user == null || !Boolean.TRUE.equals(user.getIsActive())) {
+            return null;
+        }
+
+        return jwtTokenProvider.generateToken(user);
+    }
+
+    /**
      * Convert User entity to UserResponse DTO
      */
     private UserResponse convertToUserResponse(User user) {

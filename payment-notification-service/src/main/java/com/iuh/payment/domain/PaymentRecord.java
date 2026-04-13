@@ -8,10 +8,12 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
 @Table(name = "payments")
+
 public class PaymentRecord {
 
     @Id
@@ -21,22 +23,48 @@ public class PaymentRecord {
     @Column(name = "order_id", nullable = false)
     private Long orderId;
 
+    @Column(name = "order_code", nullable = false, length = 20)
+    private String orderCode;
+
+    @Column(name = "payment_code", nullable = false, unique = true, length = 30)
+    private String paymentCode;
+
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "amount", nullable = false, precision = 12, scale = 0)
+    private BigDecimal amount;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", nullable = false, length = 20)
-    private PaymentMethod method;
+    private PaymentMethod paymentMethod;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "payment_status", nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 20)
     private PaymentStatus status;
 
-    @Column(name = "message", length = 255)
-    private String message;
+    @Column(name = "transaction_ref", length = 100)
+    private String transactionRef;
 
-    @Column(name = "paid_at", nullable = false)
+    @Column(name = "note", length = 300)
+    private String note;
+
+    @Column(name = "paid_at")
     private Instant paidAt;
+
+    @Column(name = "created_at", insertable = false, updatable = false)
+    private Instant createdAt;
+
+    @Column(name = "updated_at", insertable = false, updatable = false)
+    private Instant updatedAt;
+
+    public String getPaymentCode() {
+        return paymentCode;
+    }
+
+    public void setPaymentCode(String paymentCode) {
+        this.paymentCode = paymentCode;
+    }
 
     public Long getId() {
         return id;
@@ -54,6 +82,14 @@ public class PaymentRecord {
         this.orderId = orderId;
     }
 
+    public String getOrderCode() {
+        return orderCode;
+    }
+
+    public void setOrderCode(String orderCode) {
+        this.orderCode = orderCode;
+    }
+
     public Long getUserId() {
         return userId;
     }
@@ -62,12 +98,20 @@ public class PaymentRecord {
         this.userId = userId;
     }
 
-    public PaymentMethod getMethod() {
-        return method;
+    public BigDecimal getAmount() {
+        return amount;
     }
 
-    public void setMethod(PaymentMethod method) {
-        this.method = method;
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public PaymentMethod getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(PaymentMethod paymentMethod) {
+        this.paymentMethod = paymentMethod;
     }
 
     public PaymentStatus getStatus() {
@@ -78,12 +122,20 @@ public class PaymentRecord {
         this.status = status;
     }
 
-    public String getMessage() {
-        return message;
+    public String getTransactionRef() {
+        return transactionRef;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public void setTransactionRef(String transactionRef) {
+        this.transactionRef = transactionRef;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
     }
 
     public Instant getPaidAt() {
@@ -92,5 +144,21 @@ public class PaymentRecord {
 
     public void setPaidAt(Instant paidAt) {
         this.paidAt = paidAt;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

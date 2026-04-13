@@ -6,29 +6,41 @@ import './register.scss';
 import { registerAPI } from '@/services/api';
 
 type FieldType = {
+    username: string;
     fullName: string;
     email: string;
     password: string;
-    phone: string;
+    confirmPassword: string;
 };
 
 const RegisterPage = () => {
     const [isSubmit, setIsSubmit] = useState(false);
-    const { message } = App.useApp();
+    const { message, notification } = App.useApp();
     const navigate = useNavigate();
 
     const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
         setIsSubmit(true);
-        const { email, fullName, password, phone } = values;
+        const { username, email, password, fullName } = values;
 
-        const res = await registerAPI(fullName, email, password, phone);
-        if (res.data) {
-            //success
-            message.success("Đăng ký user thành công.")
-            navigate("/login")
-        } else {
-            //error
-            message.error(res.message)
+        try {
+            const res = await registerAPI(username, email, password, fullName) as any;
+            
+            if (res?.success === true || res?.userId) {
+                message.success("Đăng ký tài khoản thành công!");
+                navigate("/login");
+            } else {
+                notification.error({
+                    message: "Có lỗi xảy ra",
+                    description: res?.message || 'Đăng ký thất bại',
+                    duration: 5
+                });
+            }
+        } catch (error: any) {
+            notification.error({
+                message: "Có lỗi xảy ra",
+                description: error?.message || 'Không thể kết nối đến server',
+                duration: 5
+            });
         }
         setIsSubmit(false);
     };
@@ -48,17 +60,28 @@ const RegisterPage = () => {
                             autoComplete="off"
                         >
                             <Form.Item<FieldType>
-                                labelCol={{ span: 24 }} //whole column
+                                labelCol={{ span: 24 }}
+                                label="Tên đăng nhập"
+                                name="username"
+                                rules={[
+                                    { required: true, message: 'Tên đăng nhập không được để trống!' },
+                                    { min: 3, message: 'Tên đăng nhập phải có ít nhất 3 ký tự!' }
+                                ]}
+                            >
+                                <Input placeholder="Nhập tên đăng nhập" />
+                            </Form.Item>
+
+                            <Form.Item<FieldType>
+                                labelCol={{ span: 24 }}
                                 label="Họ tên"
                                 name="fullName"
                                 rules={[{ required: true, message: 'Họ tên không được để trống!' }]}
                             >
-                                <Input />
+                                <Input placeholder="Nhập họ và tên" />
                             </Form.Item>
 
-
                             <Form.Item<FieldType>
-                                labelCol={{ span: 24 }} //whole column
+                                labelCol={{ span: 24 }}
                                 label="Email"
                                 name="email"
                                 rules={[
@@ -66,24 +89,39 @@ const RegisterPage = () => {
                                     { type: "email", message: "Email không đúng định dạng!" }
                                 ]}
                             >
-                                <Input />
+                                <Input placeholder="Nhập email" />
                             </Form.Item>
 
                             <Form.Item<FieldType>
-                                labelCol={{ span: 24 }} //whole column
+                                labelCol={{ span: 24 }}
                                 label="Mật khẩu"
                                 name="password"
-                                rules={[{ required: true, message: 'Mật khẩu không được để trống!' }]}
+                                rules={[
+                                    { required: true, message: 'Mật khẩu không được để trống!' },
+                                    { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự!' }
+                                ]}
                             >
-                                <Input.Password />
+                                <Input.Password placeholder="Nhập mật khẩu" />
                             </Form.Item>
+
                             <Form.Item<FieldType>
-                                labelCol={{ span: 24 }} //whole column
-                                label="Số điện thoại"
-                                name="phone"
-                                rules={[{ required: true, message: 'Số điện thoại không được để trống!' }]}
+                                labelCol={{ span: 24 }}
+                                label="Xác nhận mật khẩu"
+                                name="confirmPassword"
+                                dependencies={['password']}
+                                rules={[
+                                    { required: true, message: 'Vui lòng xác nhận mật khẩu!' },
+                                    ({ getFieldValue }) => ({
+                                        validator(_, value) {
+                                            if (!value || getFieldValue('password') === value) {
+                                                return Promise.resolve();
+                                            }
+                                            return Promise.reject(new Error('Mật khẩu xác nhận không khớp!'));
+                                        },
+                                    }),
+                                ]}
                             >
-                                <Input />
+                                <Input.Password placeholder="Nhập lại mật khẩu" />
                             </Form.Item>
 
                             <Form.Item>
@@ -91,7 +129,7 @@ const RegisterPage = () => {
                                     Đăng ký
                                 </Button>
                             </Form.Item>
-                            <Divider>Or</Divider>
+                            <Divider />
                             <p className="text text-normal" style={{ textAlign: "center" }}>
                                 Đã có tài khoản ?
                                 <span>

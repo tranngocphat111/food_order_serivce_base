@@ -1,5 +1,5 @@
 import MobileFilter from '@/components/client/book/mobile.filter';
-import { getBooksAPI, getCategoryAPI } from '@/services/api';
+import { getFoodsAPI, getCategoryAPI } from '@/services/api';
 import { FilterTwoTone, ReloadOutlined } from '@ant-design/icons';
 import {
     Row, Col, Form, Checkbox, Divider, InputNumber,
@@ -9,6 +9,7 @@ import type { FormProps } from 'antd';
 import { useEffect, useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import 'styles/home.scss';
+import { Image } from 'antd';
 
 type FieldType = {
     range: {
@@ -26,7 +27,8 @@ const HomePage = () => {
         label: string, value: string
     }[]>([]);
 
-    const [listBook, setListBook] = useState<IBookTable[]>([]);
+    const [listFood, setListFood] = useState<IFood[]>([]);
+    const [filteredFoods, setFilteredFoods] = useState<IFood[]>([]);
     const [current, setCurrent] = useState<number>(1);
     const [pageSize, setPageSize] = useState<number>(10);
     const [total, setTotal] = useState<number>(0);
@@ -54,29 +56,79 @@ const HomePage = () => {
     }, []);
 
     useEffect(() => {
-        fetchBook();
-    }, [current, pageSize, filter, sortQuery, searchTerm]);
+        fetchFoods();
+    }, []);
 
-    const fetchBook = async () => {
-        setIsLoading(true)
-        let query = `current=${current}&pageSize=${pageSize}`;
-        if (filter) {
-            query += `&${filter}`;
-        }
-        if (sortQuery) {
-            query += `&${sortQuery}`;
-        }
+    useEffect(() => {
+        // Apply filtering and sorting whenever dependencies change
+        applyFiltersAndSort();
+    }, [listFood, filter, sortQuery, searchTerm, current, pageSize]);
 
+    const fetchFoods = async () => {
+        setIsLoading(true);
+        try {
+            const res = await getFoodsAPI();
+            const foods = Array.isArray(res) ? res : [];
+            setListFood(foods);
+            setTotal(foods.length);
+        } catch (error) {
+            console.error('Error fetching foods:', error);
+            setListFood([]);
+        }
+        setIsLoading(false);
+    }
+
+    const applyFiltersAndSort = () => {
+        let result = [...listFood];
+
+        // Filter by search term
         if (searchTerm) {
-            query += `&mainText=/${searchTerm}/i`;
+            result = result.filter(food => 
+                food.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
         }
 
-        const res = await getBooksAPI(query);
-        if (res && res.data) {
-            setListBook(res.data.result);
-            setTotal(res.data.meta.total)
+        // Filter by category
+        if (filter.includes('category=')) {
+            const categoryMatch = filter.match(/category=([^&]+)/);
+            if (categoryMatch) {
+                const categories = categoryMatch[1].split(',');
+                result = result.filter(food => 
+                    categories.includes(String(food.categoryId))
+                );
+            }
         }
-        setIsLoading(false)
+
+        // Filter by price range
+        const priceFromMatch = filter.match(/price>=(\d+)/);
+        const priceToMatch = filter.match(/price<=(\d+)/);
+        if (priceFromMatch) {
+            const minPrice = parseInt(priceFromMatch[1]);
+            result = result.filter(food => food.price >= minPrice);
+        }
+        if (priceToMatch) {
+            const maxPrice = parseInt(priceToMatch[1]);
+            result = result.filter(food => food.price <= maxPrice);
+        }
+
+        // Filter only available items
+        result = result.filter(food => food.isAvailable);
+
+        // Apply sorting
+        if (sortQuery.includes('-price')) {
+            result.sort((a, b) => b.price - a.price);
+        } else if (sortQuery.includes('price')) {
+            result.sort((a, b) => a.price - b.price);
+        } else if (sortQuery.includes('-updatedAt')) {
+            result.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        }
+
+        setTotal(result.length);
+
+        // Apply pagination
+        const startIndex = (current - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        setFilteredFoods(result.slice(startIndex, endIndex));
     }
 
     const handleOnchangePage = (pagination: { current: number, pageSize: number }) => {
@@ -92,14 +144,12 @@ const HomePage = () => {
 
 
     const handleChangeFilter = (changedValues: any, values: any) => {
-        //only fire if category changes
         if (changedValues.category) {
             const cate = values.category;
             if (cate && cate.length > 0) {
                 const f = cate.join(',');
                 setFilter(`category=${f}`)
             } else {
-                //reset data -> fetch all
                 setFilter('');
             }
         }
@@ -130,7 +180,7 @@ const HomePage = () => {
         },
         {
             key: 'sort=-updatedAt',
-            label: `Hàng Mới`,
+            label: `Món Mới`,
             children: <></>,
         },
         {
@@ -171,7 +221,7 @@ const HomePage = () => {
                                 >
                                     <Form.Item
                                         name="category"
-                                        label="Danh mục sản phẩm"
+                                        label="Danh mục món ăn"
                                         labelCol={{ span: 24 }}
                                     >
                                         <Checkbox.Group>
@@ -275,22 +325,28 @@ const HomePage = () => {
                                         </Col>
                                     </Row>
                                     <Row className='customize-row'>
-                                        {listBook?.map((item, index) => {
+                                        {filteredFoods?.map((item, index) => {
                                             return (
                                                 <div
-                                                    onClick={() => navigate(`/book/${item._id}`)}
-                                                    className="column" key={`book-${index}`}>
+                                                    onClick={() => navigate(`/food/${item.id}`)}
+                                                    className="column" key={`food-${index}`}>
                                                     <div className='wrapper'>
                                                         <div className='thumbnail'>
-                                                            <img src={`${import.meta.env.VITE_BACKEND_URL}/images/book/${item.thumbnail}`} alt="thumbnail book" />
+                                                            <img 
+                                                                src={`https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${item.imageUrl}` || '/default-food.png'} 
+                                                                alt={item.name}
+                                                                onError={(e) => {
+                                                                    (e.target as HTMLImageElement).src = '/default-food.png';
+                                                                }}
+                                                            />
                                                         </div>
-                                                        <div className='text' title={item.mainText}>{item.mainText}</div>
+                                                        <div className='text' title={item.name}>{item.name}</div>
                                                         <div className='price'>
                                                             {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item?.price ?? 0)}
                                                         </div>
                                                         <div className='rating'>
                                                             <Rate value={5} disabled style={{ color: '#ffce3d', fontSize: 10 }} />
-                                                            <span>Đã bán {item?.sold ?? 0}</span>
+                                                            <span>Còn {item?.stockQty ?? 0}</span>
                                                         </div>
                                                     </div>
                                                 </div>

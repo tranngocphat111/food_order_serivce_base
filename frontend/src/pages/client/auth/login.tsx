@@ -3,11 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import './login.scss';
 import { useState } from 'react';
 import type { FormProps } from 'antd';
-import { loginAPI, loginWithGoogleAPI } from '@/services/api';
+import { loginAPI } from '@/services/api';
 import { useCurrentApp } from '@/components/context/app.context';
-import { GooglePlusOutlined } from '@ant-design/icons';
-import { useGoogleLogin } from '@react-oauth/google';
-import axios from 'axios';
 
 type FieldType = {
     username: string;
@@ -23,55 +20,44 @@ const LoginPage = () => {
     const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
         const { username, password } = values;
         setIsSubmit(true);
-        const res = await loginAPI(username, password);
-        setIsSubmit(false);
-        if (res?.data) {
-            setIsAuthenticated(true);
-            setUser(res.data.user)
-            localStorage.setItem('access_token', res.data.access_token);
-            message.success('Đăng nhập tài khoản thành công!');
-            navigate('/')
-        } else {
+        
+        try {
+            const res = await loginAPI(username, password) as any;
+            setIsSubmit(false);
+            
+            // Handle response from user-service
+            if (res?.success === true || res?.token) {
+                const user: IUser = {
+                    id: res.userId,
+                    username: res.username,
+                    email: res.email,
+                    fullName: res.fullName || res.username,
+                    role: res.role || 'USER',
+                    active: true
+                };
+                
+                setIsAuthenticated(true);
+                setUser(user);
+                localStorage.setItem('access_token', res.token);
+                localStorage.setItem('user', JSON.stringify(user));
+                message.success('Đăng nhập tài khoản thành công!');
+                navigate('/');
+            } else {
+                notification.error({
+                    message: "Có lỗi xảy ra",
+                    description: res?.message || 'Đăng nhập thất bại',
+                    duration: 5
+                });
+            }
+        } catch (error: any) {
+            setIsSubmit(false);
             notification.error({
                 message: "Có lỗi xảy ra",
-                description:
-                    res.message && Array.isArray(res.message) ? res.message[0] : res.message,
+                description: error?.message || 'Không thể kết nối đến server',
                 duration: 5
-            })
+            });
         }
     };
-
-    const loginGoogle = useGoogleLogin({
-        onSuccess: async (tokenResponse) => {
-            const { data } = await axios(
-                "https://www.googleapis.com/oauth2/v3/userinfo",
-                {
-                    headers: {
-                        Authorization: `Bearer ${tokenResponse?.access_token}`,
-                    },
-                }
-            );
-            if (data && data.email) {
-                //call backend create user
-                const res = await loginWithGoogleAPI("GOOGLE", data.email);
-
-                if (res?.data) {
-                    setIsAuthenticated(true);
-                    setUser(res.data.user)
-                    localStorage.setItem('access_token', res.data.access_token);
-                    message.success('Đăng nhập tài khoản thành công!');
-                    navigate('/')
-                } else {
-                    notification.error({
-                        message: "Có lỗi xảy ra",
-                        description:
-                            res.message && Array.isArray(res.message) ? res.message[0] : res.message,
-                        duration: 5
-                    })
-                }
-            }
-        },
-    });
 
     return (
         <div className="login-page">
@@ -89,24 +75,23 @@ const LoginPage = () => {
                             autoComplete="off"
                         >
                             <Form.Item<FieldType>
-                                labelCol={{ span: 24 }} //whole column
-                                label="Email"
+                                labelCol={{ span: 24 }}
+                                label="Tên đăng nhập"
                                 name="username"
                                 rules={[
-                                    { required: true, message: 'Email không được để trống!' },
-                                    { type: "email", message: "Email không đúng định dạng!" }
+                                    { required: true, message: 'Tên đăng nhập không được để trống!' }
                                 ]}
                             >
-                                <Input />
+                                <Input placeholder="Nhập tên đăng nhập" />
                             </Form.Item>
 
                             <Form.Item<FieldType>
-                                labelCol={{ span: 24 }} //whole column
+                                labelCol={{ span: 24 }}
                                 label="Mật khẩu"
                                 name="password"
                                 rules={[{ required: true, message: 'Mật khẩu không được để trống!' }]}
                             >
-                                <Input.Password />
+                                <Input.Password placeholder="Nhập mật khẩu" />
                             </Form.Item>
 
                             <Form.Item>
@@ -114,20 +99,7 @@ const LoginPage = () => {
                                     Đăng nhập
                                 </Button>
                             </Form.Item>
-                            <Divider>Or</Divider>
-                            <div
-                                onClick={() => loginGoogle()}
-                                title='Đăng nhập với tài khoản Google'
-                                style={{
-                                    display: "flex", alignItems: "center",
-                                    justifyContent: "center", gap: 10,
-                                    textAlign: "center", marginBottom: 25,
-                                    cursor: "pointer"
-                                }}>
-                                Đăng nhập với
-                                <GooglePlusOutlined
-                                    style={{ fontSize: 30, color: "orange" }} />
-                            </div>
+                            <Divider />
 
                             <p className="text text-normal" style={{ textAlign: "center" }}>
                                 Chưa có tài khoản ?

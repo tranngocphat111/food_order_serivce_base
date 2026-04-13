@@ -54,6 +54,9 @@ public class AppProperties {
             @NotBlank
             private String updateStatusPath;
 
+            @NotBlank
+            private String getOrderPath;
+
             public String getBaseUrl() {
                 return baseUrl;
             }
@@ -68,6 +71,14 @@ public class AppProperties {
 
             public void setUpdateStatusPath(String updateStatusPath) {
                 this.updateStatusPath = updateStatusPath;
+            }
+
+            public String getGetOrderPath() {
+                return getOrderPath;
+            }
+
+            public void setGetOrderPath(String getOrderPath) {
+                this.getOrderPath = getOrderPath;
             }
         }
 

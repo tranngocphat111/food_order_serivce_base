@@ -27,7 +27,7 @@ public class ExternalServiceClient {
     }
 
     public UserInfo findUserById(Long userId) {
-        String url = serviceClientProperties.getUserService().getBaseUrl() + "/users";
+        String url = serviceClientProperties.getUserService().getBaseUrl() + "/api/users";
         List<Map<String, Object>> users = fetchList(url, "Cannot validate user from User Service");
         for (Map<String, Object> user : users) {
             Long id = getAsLong(user, Set.of("id", "userId"));

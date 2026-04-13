@@ -28,45 +28,38 @@ const OrderDetail = (props: IProps) => {
         }
     }, [carts]);
 
-    const handleOnChangeInput = (value: number, book: IBookTable) => {
+    const handleOnChangeInput = (value: number, food: IFood) => {
         if (!value || +value < 1) return;
         if (!isNaN(+value)) {
-            //update localStorage
-
             const cartStorage = localStorage.getItem("carts");
-            if (cartStorage && book) {
-                //update
-                const carts = JSON.parse(cartStorage) as ICart[];
+            if (cartStorage && food) {
+                const cartsData = JSON.parse(cartStorage) as ICart[];
 
-                //check exist
-                let isExistIndex = carts.findIndex(c => c._id === book?._id);
+                // Check if exists
+                let isExistIndex = cartsData.findIndex(c => c.id === food?.id);
                 if (isExistIndex > -1) {
-                    carts[isExistIndex].quantity = +value;
+                    cartsData[isExistIndex].quantity = +value;
                 }
 
-                localStorage.setItem("carts", JSON.stringify(carts));
-
-                //sync React Context
-                setCarts(carts);
+                localStorage.setItem("carts", JSON.stringify(cartsData));
+                setCarts(cartsData);
             }
         }
     }
 
-    const handleRemoveBook = (_id: string) => {
+    const handleRemoveFood = (id: number) => {
         const cartStorage = localStorage.getItem("carts");
         if (cartStorage) {
-            //update
-            const carts = JSON.parse(cartStorage) as ICart[];
-            const newCarts = carts.filter(item => item._id !== _id)
+            const cartsData = JSON.parse(cartStorage) as ICart[];
+            const newCarts = cartsData.filter(item => item.id !== id);
             localStorage.setItem("carts", JSON.stringify(newCarts));
-            //sync React Context
             setCarts(newCarts);
         }
     }
 
     const handleNextStep = () => {
         if (!carts.length) {
-            message.error("Không tồn tại sản phẩm trong giỏ hàng.")
+            message.error("Không tồn tại món ăn trong giỏ hàng.")
             return;
         }
         setCurrentStep(1)
@@ -78,7 +71,7 @@ const OrderDetail = (props: IProps) => {
                 <Row gutter={[20, 20]}>
                     <Col md={18} xs={24}>
                         {carts?.map((item, index) => {
-                            const currentBookPrice = item?.detail?.price ?? 0;
+                            const currentFoodPrice = item?.detail?.price ?? 0;
                             return (
                                 <div className='order-book' key={`index-${index}`}
                                     style={isMobile ? { flexDirection: 'column' } : {}}
@@ -86,12 +79,18 @@ const OrderDetail = (props: IProps) => {
                                     {!isMobile ?
                                         <>
                                             <div className='book-content'>
-                                                <img src={`${import.meta.env.VITE_BACKEND_URL}/images/book/${item?.detail?.thumbnail}`} />
+                                                <img 
+                                                    src={`https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${item?.detail?.imageUrl}` || '/default-food.png'} 
+                                                    alt={item?.detail?.name}
+                                                    onError={(e) => {
+                                                        (e.target as HTMLImageElement).src = '/default-food.png';
+                                                    }}
+                                                />
                                                 <div className='title'>
-                                                    {item?.detail?.mainText}
+                                                    {item?.detail?.name}
                                                 </div>
                                                 <div className='price'>
-                                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentBookPrice)}
+                                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentFoodPrice)}
                                                 </div>
                                             </div>
                                             <div className='action'>
@@ -99,39 +98,49 @@ const OrderDetail = (props: IProps) => {
                                                     <InputNumber
                                                         onChange={(value) => handleOnChangeInput(value as number, item.detail)}
                                                         value={item.quantity}
+                                                        min={1}
+                                                        max={item.detail.stockQty}
                                                     />
                                                 </div>
                                                 <div className='sum'>
-                                                    Tổng:  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentBookPrice * (item?.quantity ?? 0))}
+                                                    Tổng:  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentFoodPrice * (item?.quantity ?? 0))}
                                                 </div>
                                                 <DeleteTwoTone
                                                     style={{ cursor: "pointer" }}
-                                                    onClick={() => handleRemoveBook(item._id)}
+                                                    onClick={() => handleRemoveFood(item.id)}
                                                     twoToneColor="#eb2f96"
                                                 />
                                             </div>
                                         </>
                                         :
                                         <>
-                                            <div>{item?.detail?.mainText}</div>
+                                            <div>{item?.detail?.name}</div>
                                             <div className='book-content ' style={{ width: "100%" }}>
-                                                <img src={`${import.meta.env.VITE_BACKEND_URL}/images/book/${item?.detail?.thumbnail}`} />
+                                                <img 
+                                                    src={`https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${item?.detail?.imageUrl}` || '/default-food.png'} 
+                                                    alt={item?.detail?.name}
+                                                    onError={(e) => {
+                                                        (e.target as HTMLImageElement).src = '/default-food.png';
+                                                    }}
+                                                />
                                                 <div className='action' >
                                                     <div className='quantity'>
                                                         <InputNumber
                                                             onChange={(value) => handleOnChangeInput(value as number, item.detail)}
                                                             value={item.quantity}
+                                                            min={1}
+                                                            max={item.detail.stockQty}
                                                         />
                                                     </div>
                                                     <DeleteTwoTone
                                                         style={{ cursor: "pointer" }}
-                                                        onClick={() => handleRemoveBook(item._id)}
+                                                        onClick={() => handleRemoveFood(item.id)}
                                                         twoToneColor="#eb2f96"
                                                     />
                                                 </div>
                                             </div>
                                             <div className='sum'>
-                                                Tổng:  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentBookPrice * (item?.quantity ?? 0))}
+                                                Tổng:  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentFoodPrice * (item?.quantity ?? 0))}
                                             </div>
                                         </>
                                     }
@@ -141,7 +150,7 @@ const OrderDetail = (props: IProps) => {
 
                         {carts.length === 0 &&
                             <Empty
-                                description="Không có sản phẩm trong giỏ hàng"
+                                description="Không có món ăn trong giỏ hàng"
                             />
                         }
                     </Col>
@@ -165,7 +174,7 @@ const OrderDetail = (props: IProps) => {
                                 color="danger" variant="solid"
                                 onClick={() => handleNextStep()}
                             >
-                                Mua Hàng ({carts?.length ?? 0})
+                                Đặt Hàng ({carts?.length ?? 0})
                             </Button>
 
                         </div>

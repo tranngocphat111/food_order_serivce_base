@@ -1,6 +1,7 @@
 package iuh.fit.se.foodservices.controller;
 
-import iuh.fit.se.foodservices.entity.Food;
+import iuh.fit.se.foodservices.entity.Foods;
+import iuh.fit.se.foodservices.entity.Foods;
 import iuh.fit.se.foodservices.repository.FoodRepository;
 import iuh.fit.se.foodservices.service.S3Service;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,12 +25,12 @@ public class FoodController {
     private S3Service s3Service;
 
     @GetMapping
-    public List<Food> getAllFoods() {
+    public List<Foods> getAllFoods() {
         return foodRepository.findAll();
     }
 
     @PostMapping
-    public Food createFood(@RequestBody Food food) {
+    public Foods createFood(@RequestBody Foods food) {
         food.setCreatedAt(LocalDateTime.now());
         food.setUpdatedAt(LocalDateTime.now());
         if (food.getIsAvailable() == null) {
@@ -42,10 +43,10 @@ public class FoodController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Food> updateFood(@PathVariable Long id, @RequestBody Food foodDetails) {
-        Optional<Food> optionalFood = foodRepository.findById(id);
+    public ResponseEntity<Foods> updateFood(@PathVariable Long id, @RequestBody Foods foodDetails) {
+        Optional<Foods> optionalFood = foodRepository.findById(id);
         if (optionalFood.isPresent()) {
-            Food food = optionalFood.get();
+            Foods food = optionalFood.get();
             food.setName(foodDetails.getName());
             food.setPrice(foodDetails.getPrice());
             food.setDescription(foodDetails.getDescription());
@@ -59,10 +60,16 @@ public class FoodController {
         }
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Foods> getFoodById(@PathVariable Long id) {
+        Optional<Foods> optionalFood = foodRepository.findById(id);
+        return optionalFood.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteFood(@PathVariable Long id) {
         if (foodRepository.existsById(id)) {
-            Food food = foodRepository.findById(id).orElse(null);
+            Foods food = foodRepository.findById(id).orElse(null);
             // Delete image from S3 if it exists
             if (food != null && food.getImageUrl() != null && !food.getImageUrl().isEmpty()) {
                 try {
@@ -78,14 +85,14 @@ public class FoodController {
     }
 
     @PostMapping("/{id}/image")
-    public ResponseEntity<Food> uploadFoodImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
-        java.util.Optional<Food> optionalFood = foodRepository.findById(id);
+    public ResponseEntity<Foods> uploadFoodImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        java.util.Optional<Foods> optionalFood = foodRepository.findById(id);
         if (!optionalFood.isPresent()) {
             return ResponseEntity.notFound().build();
         }
 
         try {
-            Food food = optionalFood.get();
+            Foods food = optionalFood.get();
 
             // Delete old image if exists
             if (food.getImageUrl() != null && !food.getImageUrl().isEmpty()) {
@@ -100,7 +107,7 @@ public class FoodController {
             String url = s3Service.getFileUrl(key);
             food.setImageUrl(url);
             food.setUpdatedAt(LocalDateTime.now());
-            Food saved = foodRepository.save(food);
+            Foods saved = foodRepository.save(food);
             return ResponseEntity.ok(saved);
         } catch (IOException e) {
             return ResponseEntity.status(500).build();
@@ -111,12 +118,12 @@ public class FoodController {
 
     @DeleteMapping("/{id}/image")
     public ResponseEntity<Void> deleteFoodImage(@PathVariable Long id) {
-        java.util.Optional<Food> optionalFood = foodRepository.findById(id);
+        java.util.Optional<Foods> optionalFood = foodRepository.findById(id);
         if (!optionalFood.isPresent()) {
             return ResponseEntity.notFound().build();
         }
 
-        Food food = optionalFood.get();
+        Foods food = optionalFood.get();
         if (food.getImageUrl() != null && !food.getImageUrl().isEmpty()) {
             try {
                 extractAndDeleteFromS3(food.getImageUrl());

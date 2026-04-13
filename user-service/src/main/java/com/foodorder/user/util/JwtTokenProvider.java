@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import com.foodorder.user.entity.User;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -42,6 +43,14 @@ public class JwtTokenProvider {
 
     public String getUsernameFromToken(String token) {
         return getClaims(token).getSubject();
+    }
+
+    public String getUsernameFromTokenAllowExpired(String token) {
+        try {
+            return getClaims(token).getSubject();
+        } catch (ExpiredJwtException e) {
+            return e.getClaims().getSubject();
+        }
     }
 
     public Long getUserIdFromToken(String token) {

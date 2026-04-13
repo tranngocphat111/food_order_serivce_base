@@ -21,11 +21,10 @@ public class AppConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**")
-                    .allowedOrigins(corsProperties.getAllowedOrigins().toArray(String[]::new))
+                registry.addMapping("/**").allowedOriginPatterns("*")
                     .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                     .allowedHeaders("*")
-                    .allowCredentials(false);
+                    .allowCredentials(true);
             }
         };
     }

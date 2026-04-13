@@ -7,12 +7,16 @@ import { getHistoryAPI } from "@/services/api";
 
 const HistoryPage = () => {
 
-    const columns: TableProps<IHistory>['columns'] = [
+    const columns: TableProps<IOrderResponse>['columns'] = [
         {
             title: 'STT',
             dataIndex: 'index',
             key: 'index',
             render: (item, record, index) => (<>{index + 1}</>)
+        },
+        {
+            title: 'Mã đơn hàng',
+            dataIndex: 'orderCode',
         },
         {
             title: 'Thời gian ',
@@ -22,26 +26,43 @@ const HistoryPage = () => {
             }
         },
         {
-            title: 'Tổng số tiền',
-            dataIndex: 'totalPrice',
+            title: 'Tổng tiền',
+            dataIndex: 'totalAmount',
             render: (item, record, index) => {
                 return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item)
             }
         },
         {
             title: 'Trạng thái',
-            render: (item, record, index) => (
-                <Tag color={
-                    record.paymentStatus === "UNPAID"
-                        ? "volcano" : "green"
-                }>
-                    {record.paymentStatus}
-                </Tag>
-            )
+            dataIndex: 'status',
+            render: (item, record, index) => {
+                const statusColors: Record<string, string> = {
+                    'PENDING': 'orange',
+                    'CONFIRMED': 'blue',
+                    'PREPARING': 'cyan',
+                    'READY': 'geekblue',
+                    'DELIVERED': 'green',
+                    'CANCELLED': 'red'
+                };
+                const statusLabels: Record<string, string> = {
+                    'PENDING': 'Chờ xác nhận',
+                    'CONFIRMED': 'Đã xác nhận',
+                    'PREPARING': 'Đang chuẩn bị',
+                    'READY': 'Sẵn sàng',
+                    'DELIVERED': 'Đã giao',
+                    'CANCELLED': 'Đã hủy'
+                };
+                return (
+                    <Tag color={statusColors[item] || 'default'}>
+                        {statusLabels[item] || item}
+                    </Tag>
+                );
+            }
         },
         {
-            title: 'PaymentRef',
-            dataIndex: 'paymentRef',
+            title: 'Địa chỉ',
+            dataIndex: 'deliveryAddress',
+            ellipsis: true,
         },
         {
             title: 'Chi tiết',
@@ -55,25 +76,32 @@ const HistoryPage = () => {
         },
     ];
 
-    const [dataHistory, setDataHistory] = useState<IHistory[]>([])
+    const [dataHistory, setDataHistory] = useState<IOrderResponse[]>([])
     const [loading, setLoading] = useState<boolean>(true);
 
     const [openDetail, setOpenDetail] = useState<boolean>(false);
-    const [dataDetail, setDataDetail] = useState<IHistory | null>(null);
+    const [dataDetail, setDataDetail] = useState<IOrderResponse | null>(null);
 
     const { notification } = App.useApp();
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            const res = await getHistoryAPI();
-            if (res && res.data) {
-                setDataHistory(res.data);
-            } else {
+            try {
+                const res = await getHistoryAPI();
+                if (res && res.data) {
+                    setDataHistory(res.data);
+                } else {
+                    notification.error({
+                        message: 'Đã có lỗi xảy ra',
+                        description: res?.message || 'Không thể tải lịch sử đơn hàng'
+                    });
+                }
+            } catch (error: any) {
                 notification.error({
                     message: 'Đã có lỗi xảy ra',
-                    description: res.message
-                })
+                    description: error?.message || 'Không thể kết nối đến server'
+                });
             }
             setLoading(false);
         }
@@ -83,13 +111,13 @@ const HistoryPage = () => {
 
     return (
         <div style={{ margin: 50 }}>
-            <h3>Lịch sử mua hàng</h3>
+            <h3>Lịch sử đặt hàng</h3>
             <Divider />
             <Table
                 bordered
                 columns={columns}
                 dataSource={dataHistory}
-                rowKey={"_id"}
+                rowKey="id"
                 loading={loading}
             />
             <Drawer
@@ -99,20 +127,28 @@ const HistoryPage = () => {
                     setDataDetail(null);
                 }}
                 open={openDetail}
+                width={400}
             >
-                {dataDetail?.detail?.map((item, index) => {
-                    return (
-                        <ul key={index}>
-                            <li>
-                                Tên sách: {item.bookName}
-                            </li>
-                            <li>
-                                Số lượng: {item.quantity}
-                            </li>
-                            <Divider />
-                        </ul>
-                    )
-                })}
+                {dataDetail && (
+                    <>
+                        <p><strong>Mã đơn:</strong> {dataDetail.orderCode}</p>
+                        <p><strong>Địa chỉ:</strong> {dataDetail.deliveryAddress}</p>
+                        {dataDetail.note && <p><strong>Ghi chú:</strong> {dataDetail.note}</p>}
+                        <Divider />
+                        <h4>Các món đã đặt:</h4>
+                        {dataDetail.items?.map((item, index) => {
+                            return (
+                                <div key={index} style={{ marginBottom: 10, padding: 10, background: '#f5f5f5', borderRadius: 5 }}>
+                                    <p><strong>{item.foodName}</strong></p>
+                                    <p>Số lượng: {item.quantity}</p>
+                                    <p>Giá: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}</p>
+                                </div>
+                            )
+                        })}
+                        <Divider />
+                        <p><strong>Tổng tiền:</strong> {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(dataDetail.totalAmount)}</p>
+                    </>
+                )}
             </Drawer>
         </div>
     )

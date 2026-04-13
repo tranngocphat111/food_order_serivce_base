@@ -25,9 +25,9 @@ public class Foods {
     private LocalDateTime updatedAt;
 
     // Constructors
-    public Food() {}
+    public Foods() {}
 
-    public Food(String name, Long price, String description, Integer categoryId) {
+    public Foods(String name, Long price, String description, Integer categoryId) {
         this.name = name;
         this.price = price;
         this.description = description;

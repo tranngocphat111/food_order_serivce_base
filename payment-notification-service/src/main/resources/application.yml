@@ -24,12 +24,12 @@ integration:
     get-order-path: /orders/{orderId}
   notification:
     mode: LOG
-    endpoint: http://192.168.1.79:8090/notifications
+    endpoint: http://192.168.1.62:8090/notifications
 
 app:
   cors:
     allowed-origins:
-      - http://192.168.1.79:3000
+      - http://192.168.1.62:3000
 management:
   endpoints:
     web:

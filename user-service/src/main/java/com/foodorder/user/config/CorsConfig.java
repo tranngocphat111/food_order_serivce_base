@@ -24,11 +24,15 @@ public class CorsConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://192.168.1.153:3000",
+            "http://192.168.1.62:3000",
+            "http://192.168.1.62:5173",
+                "http://192.168.1.62:8085",
                 "http://192.168.1.153:4173",
                 "http://192.168.1.153:8081",
                 "http://192.168.1.153:19000",
                 "http://192.168.1.153:19006",
                 "http://localhost:3000",   // ✅ already present but needs to be here
+            "http://localhost:5173",
                 "http://localhost:4173",   // ✅ add preview too
                 "http://localhost:8081",   // ✅ add mobile dev
                 "http://localhost:19000"   // ✅ add Expo Go

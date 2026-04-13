@@ -1,0 +1,133 @@
+spring:
+  application:
+    name: api-gateway
+
+  webflux:
+    base-path: /
+
+  cloud:
+    gateway:
+      # Enables detailed gateway debugging
+      default-filters:
+        - RemoveRequestHeader=Content-Length
+
+      # Routes configuration
+      routes:
+        # Auth compatibility routes to user-service
+        - id: user-auth-service
+          uri: ${USER_SERVICE_URL:http://192.168.1.62:8081}
+          predicates:
+            - Path=/api/v1/auth/**
+          filters:
+            - StripPrefix=0
+
+        # User Service Routes
+        - id: user-service
+          uri: ${USER_SERVICE_URL:http://192.168.1.62:8081}
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - StripPrefix=0
+
+        # Food Service Routes
+        - id: food-service
+          uri: ${FOOD_SERVICE_URL:http://192.168.1.62:8082}
+          predicates:
+            - Path=/foods/**
+          filters:
+            - StripPrefix=0
+
+        # Order Service Routes
+        - id: order-service
+          uri: ${ORDER_SERVICE_URL:http://192.168.1.62:8083}
+          predicates:
+            - Path=/orders/**
+          filters:
+            - StripPrefix=0
+
+        # Payment Service Routes
+        - id: payment-service
+          uri: ${PAYMENT_SERVICE_URL:http://192.168.1.62:8084}
+          predicates:
+            - Path=/payments/**
+          filters:
+            - StripPrefix=0
+
+      # Global CORS configuration
+      globalcors:
+        cors-configurations:
+          "[/**]":
+            allowed-origins: ${FRONTEND_ORIGINS:http://192.168.1.62:3000,http://192.168.1.62:5173,http://localhost:3000,http://localhost:5173}
+            allowed-methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
+            allowed-headers: "*"
+            exposed-headers:
+              - Authorization
+              - Content-Type
+            allow-credentials: true
+            max-age: 3600
+
+gateway:
+  routes:
+    user-service-url: ${USER_SERVICE_URL:http://192.168.1.62:8081}
+    food-service-url: ${FOOD_SERVICE_URL:http://192.168.1.62:8082}
+    order-service-url: ${ORDER_SERVICE_URL:http://192.168.1.62:8083}
+    payment-service-url: ${PAYMENT_SERVICE_URL:http://192.168.1.62:8084}
+  auth:
+    service-url: ${USER_SERVICE_URL:http://192.168.1.62:8081}
+    verify-token-endpoint: /api/users/verify-token
+  cors:
+    allowed-origins: ${FRONTEND_ORIGINS:http://192.168.1.62:3000,http://192.168.1.62:5173,http://localhost:3000,http://localhost:5173}
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS,PATCH
+    allowed-headers: "*"
+    max-age: 3600
+
+  # Logging configuration
+  jackson:
+    serialization:
+      indent-output: true
+
+# Server configuration
+server:
+  port: 8085
+  servlet:
+    context-path: /
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+    min-response-size: 1024
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    com.foodorder.gateway: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/api-gateway.log
+    max-size: 10MB
+    max-history: 10
+
+# Actuator endpoints for monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,gateway
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      simple:
+        enabled: true

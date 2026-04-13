@@ -5,7 +5,6 @@ const mutex = new Mutex();
 
 const createInstanceAxios = (baseURL: string) => {
     const instance = axios.create({
-        // baseURL: import.meta.env.VITE_BACKEND_URL,
         baseURL: baseURL,
         withCredentials: true
     });
@@ -23,8 +22,11 @@ const createInstanceAxios = (baseURL: string) => {
     instance.interceptors.request.use(function (config) {
         // Do something before request is sent
         const token = localStorage.getItem("access_token");
-        const auth = token ? `Bearer ${token}` : '';
-        config.headers["Authorization"] = auth;
+        if (token) {
+            config.headers["Authorization"] = `Bearer ${token}`;
+        } else if (config.headers && "Authorization" in config.headers) {
+            delete config.headers["Authorization"];
+        }
 
         return config;
     }, function (error) {

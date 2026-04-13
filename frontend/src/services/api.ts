@@ -1,16 +1,12 @@
 import createInstanceAxios from 'services/axios.customize';
 
-// Backend URLs for microservices
-const USER_SERVICE_URL = import.meta.env.VITE_USER_SERVICE_URL;
-const FOOD_SERVICE_URL = import.meta.env.VITE_FOOD_SERVICE_URL;
-const ORDER_SERVICE_URL = import.meta.env.VITE_ORDER_SERVICE_URL;
-const PAYMENT_SERVICE_URL = import.meta.env.VITE_PAYMENT_SERVICE_URL;
 
-// Create axios instances for each service
-const userAxios = createInstanceAxios(USER_SERVICE_URL);
-const foodAxios = createInstanceAxios(FOOD_SERVICE_URL);
-const orderAxios = createInstanceAxios(ORDER_SERVICE_URL);
-const paymentAxios = createInstanceAxios(PAYMENT_SERVICE_URL);
+// Keep aliases to avoid changing call-sites across this file
+const gatewayAxios = createInstanceAxios('/');
+const userAxios = gatewayAxios;
+const foodAxios = gatewayAxios;
+const orderAxios = gatewayAxios;
+const paymentAxios = gatewayAxios;
 
 // ==================== USER SERVICE APIs ====================
 
@@ -46,7 +42,7 @@ export const verifyTokenAPI = (token: string) => {
 export const fetchAccountAPI = () => {
     const token = localStorage.getItem('access_token');
     const userStr = localStorage.getItem('user');
-    
+
     if (token && userStr) {
         const user = JSON.parse(userStr);
         return Promise.resolve({
@@ -193,15 +189,15 @@ export const getHistoryAPI = async () => {
     if (!userStr) {
         return { data: [], statusCode: 401, message: 'Not authenticated' };
     }
-    
+
     const user = JSON.parse(userStr);
     const orders = await orderAxios.get<IOrderResponse[]>('/orders');
-    
+
     // Filter orders by userId
-    const userOrders = Array.isArray(orders) 
+    const userOrders = Array.isArray(orders)
         ? orders.filter((o: IOrderResponse) => o.userId === user.id)
         : [];
-    
+
     return {
         data: userOrders,
         statusCode: 200,
@@ -233,7 +229,7 @@ export const createPaymentAPI = (
 export const getBooksAPI = async (_query: string) => {
     const foods = await getFoodsAPI();
     const foodsArray = Array.isArray(foods) ? foods : [];
-    
+
     // Convert to legacy paginated format
     return {
         data: {
@@ -264,7 +260,7 @@ export const getBooksAPI = async (_query: string) => {
 export const getBookByIdAPI = async (id: string) => {
     const food = await getFoodByIdAPI(Number(id));
     const foodData = food as IFood;
-    
+
     return {
         data: {
             ...foodData,
@@ -391,7 +387,7 @@ export const getDashboardAPI = async () => {
     const foods = await getFoodsAPI();
     const orders = await getOrdersAPI();
     const users = await getUsersAPI();
-    
+
     return {
         data: {
             countOrder: Array.isArray(orders) ? orders.length : 0,

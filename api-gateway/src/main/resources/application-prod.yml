@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: ${USER_SERVICE_URL}
+          predicates:
+            - Path=/api/users/**
+        - id: food-service
+          uri: ${FOOD_SERVICE_URL}
+          predicates:
+            - Path=/api/foods/**
+        - id: order-service
+          uri: ${ORDER_SERVICE_URL}
+          predicates:
+            - Path=/api/orders/**
+        - id: payment-service
+          uri: ${PAYMENT_SERVICE_URL}
+          predicates:
+            - Path=/api/payments/**
+
+      globalcors:
+        cors-configurations:
+          "[/**]":
+            allowed-origins: ${FRONTEND_ORIGIN}
+            allowed-methods: [GET, POST, PUT, DELETE, OPTIONS, PATCH]
+            allowed-headers: "*"
+            max-age: 3600
+
+server:
+  port: 8085
+
+logging:
+  level:
+    root: WARN
+    com.foodorder.gateway: INFO
+
+gateway:
+  auth:
+    service-url: ${USER_SERVICE_URL}
+    verify-token-endpoint: "/api/users/verify-token"

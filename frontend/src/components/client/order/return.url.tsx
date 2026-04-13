@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 const ReturnURLPage = () => {
-    let [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams] = useSearchParams();
     const paymentRef = searchParams?.get("vnp_TxnRef") ?? "";
     const responseCode = searchParams?.get("vnp_ResponseCode") ?? "";
 
     const [loading, setLoading] = useState<boolean>(true);
+    const [backendMessage, setBackendMessage] = useState<string>("");
     const { notification } = App.useApp();
 
     useEffect(() => {
@@ -21,8 +22,22 @@ const ReturnURLPage = () => {
                     paymentRef
                 );
                 if (res.data) {
-                    //todo
+                    setBackendMessage(res.message ?? "");
+                    if (res.data.type === "PAYMENT_SUCCESS") {
+                        notification.success({
+                            message: "Thanh toán thành công",
+                            description: res.data.message,
+                            duration: 5
+                        });
+                    } else {
+                        notification.warning({
+                            message: "Thanh toán thất bại",
+                            description: res.data.message,
+                            duration: 5
+                        });
+                    }
                 } else {
+                    setBackendMessage(res.message ?? "");
                     notification.error({
                         message: "Có lỗi xảy ra",
                         description:
@@ -35,8 +50,10 @@ const ReturnURLPage = () => {
                 setLoading(false);
             }
             changePaymentStatus();
+        } else {
+            setLoading(false);
         }
-    }, [paymentRef])
+    }, [paymentRef, responseCode, notification])
 
     return (
         <>
@@ -50,7 +67,7 @@ const ReturnURLPage = () => {
                         <Result
                             status="success"
                             title="Đặt hàng thành công"
-                            subTitle="Hệ thông đã ghi nhận thông tin đơn hàng của bạn."
+                            subTitle={backendMessage || "Hệ thống đã ghi nhận thông tin đơn hàng của bạn."}
                             extra={[
                                 <Button key="home">
                                     <Link to={"/"} type="primary">
@@ -69,7 +86,7 @@ const ReturnURLPage = () => {
                         <Result
                             status="error"
                             title="Giao dịch thanh toán không thành công"
-                            subTitle="Vui lòng liên hệ admin để được hỗ trợ."
+                            subTitle={backendMessage || "Vui lòng liên hệ admin để được hỗ trợ."}
                             extra={
                                 <Button type="primary" key="console">
                                     <Link to={"/"} type="primary">

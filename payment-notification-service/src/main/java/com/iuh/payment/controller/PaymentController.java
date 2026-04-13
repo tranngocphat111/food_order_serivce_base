@@ -1,5 +1,8 @@
 package com.iuh.payment.controller;
 
+import com.iuh.payment.dto.ApiResponse;
+import com.iuh.payment.dto.NotificationResponse;
+import com.iuh.payment.dto.PaymentCallbackRequest;
 import com.iuh.payment.dto.PaymentRequest;
 import com.iuh.payment.dto.PaymentResponse;
 import com.iuh.payment.service.PaymentService;
@@ -25,5 +28,12 @@ public class PaymentController {
     @ResponseStatus(HttpStatus.CREATED)
     public PaymentResponse createPayment(@Valid @RequestBody PaymentRequest request) {
         return paymentService.createPayment(request);
+    }
+
+    @PostMapping("/notification-events")
+    public ApiResponse<NotificationResponse> handlePaymentCallback(
+            @Valid @RequestBody PaymentCallbackRequest request) {
+        NotificationResponse notification = paymentService.processPaymentCallback(request);
+        return new ApiResponse<>(200, notification.getMessage(), notification);
     }
 }

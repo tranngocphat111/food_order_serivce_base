@@ -169,6 +169,17 @@ declare global {
         message: string;
     }
 
+    interface IPaymentNotificationEvent {
+        id: number;
+        userId: number;
+        orderId: number;
+        paymentId: number;
+        type: 'PAYMENT_SUCCESS' | 'PAYMENT_FAILED';
+        message: string;
+        isRead: boolean;
+        createdAt: string;
+    }
+
     // Order Status
     type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'DELIVERED' | 'CANCELLED';
 

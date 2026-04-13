@@ -12,9 +12,6 @@ const foodAxios = createInstanceAxios(FOOD_SERVICE_URL);
 const orderAxios = createInstanceAxios(ORDER_SERVICE_URL);
 const paymentAxios = createInstanceAxios(PAYMENT_SERVICE_URL);
 
-// Legacy axios for backward compatibility
-const axios = createInstanceAxios(import.meta.env.VITE_BACKEND_URL || USER_SERVICE_URL);
-
 // ==================== USER SERVICE APIs ====================
 
 // Login API - User Service
@@ -59,7 +56,7 @@ export const fetchAccountAPI = () => {
         } as IBackendRes<IFetchAccount>);
     }
     return Promise.resolve({
-        data: null,
+        data: undefined,
         statusCode: 401,
         message: 'Not authenticated'
     } as IBackendRes<IFetchAccount>);
@@ -77,7 +74,7 @@ export const logoutAPI = () => {
 }
 
 // Get all users - User Service
-export const getUsersAPI = (query?: string) => {
+export const getUsersAPI = (_query?: string) => {
     const urlBackend = "/api/users";
     return userAxios.get<IUser[]>(urlBackend);
 }
@@ -172,7 +169,7 @@ export const createOrderAPI = (
 }
 
 // Get all orders
-export const getOrdersAPI = (query?: string) => {
+export const getOrdersAPI = (_query?: string) => {
     const urlBackend = "/orders";
     return orderAxios.get<IOrderResponse[]>(urlBackend);
 }
@@ -232,7 +229,7 @@ export const createPaymentAPI = (
 // These are kept for backward compatibility with existing components
 
 // Legacy: Get books (maps to getFoodsAPI)
-export const getBooksAPI = async (query: string) => {
+export const getBooksAPI = async (_query: string) => {
     const foods = await getFoodsAPI();
     const foodsArray = Array.isArray(foods) ? foods : [];
     
@@ -288,7 +285,7 @@ export const getBookByIdAPI = async (id: string) => {
 export const createBookAPI = async (
     mainText: string, author: string,
     price: number, quantity: number, category: string,
-    thumbnail: string, slider: string[]
+    _thumbnail: string, _slider: string[]
 ) => {
     return createFoodAPI({
         name: mainText,
@@ -305,7 +302,7 @@ export const updateBookAPI = async (
     _id: string,
     mainText: string, author: string,
     price: number, quantity: number, category: string,
-    thumbnail: string, slider: string[]
+    _thumbnail: string, _slider: string[]
 ) => {
     return updateFoodAPI(Number(_id), {
         name: mainText,
@@ -322,7 +319,7 @@ export const deleteBookAPI = (_id: string) => {
 }
 
 // Legacy: Upload file
-export const uploadFileAPI = async (fileImg: any, folder: string) => {
+export const uploadFileAPI = async (_fileImg: any, _folder: string) => {
     // This would need a separate file upload service
     // For now, return mock response
     return {
@@ -334,12 +331,12 @@ export const uploadFileAPI = async (fileImg: any, folder: string) => {
 
 // Legacy: Create user
 export const createUserAPI = (fullName: string, email: string,
-    password: string, phone: string) => {
+    password: string, _phone: string) => {
     return registerAPI(email, email, password, fullName);
 }
 
 // Legacy: Update user
-export const updateUserAPI = (_id: string, fullName: string, phone: string) => {
+export const updateUserAPI = (_id: string, _fullName: string, _phone: string) => {
     // User service doesn't have update endpoint yet
     return Promise.resolve({
         data: null,
@@ -359,14 +356,14 @@ export const deleteUserAPI = (_id: string) => {
 
 // Legacy: Update user info
 export const updateUserInfoAPI = (
-    _id: string, avatar: string,
+    _id: string, _avatar: string,
     fullName: string, phone: string) => {
     return updateUserAPI(_id, fullName, phone);
 }
 
 // Legacy: Update user password
 export const updateUserPasswordAPI = (
-    email: string, oldpass: string, newpass: string) => {
+    _email: string, _oldpass: string, _newpass: string) => {
     return Promise.resolve({
         data: null,
         statusCode: 200,
@@ -412,28 +409,21 @@ export const getDashboardAPI = async () => {
 }
 
 // Legacy: Google login (not supported with current backend)
-export const loginWithGoogleAPI = (type: string, email: string) => {
+export const loginWithGoogleAPI = (_type: string, _email: string) => {
     return Promise.resolve({
-        data: null,
+        data: undefined,
         statusCode: 400,
         message: 'Google login not supported'
     } as IBackendRes<ILogin>);
 }
 
-// Legacy: VNPay (redirect to payment service)
-export const getVNPayUrlAPI = (amount: number, locale: string, paymentRef: string) => {
-    return Promise.resolve({
-        data: null,
-        statusCode: 400,
-        message: 'VNPay not configured. Use BANKING payment method.'
-    } as IBackendRes<{ url: string }>);
-}
+
 
 // Legacy: Update payment status
 export const updatePaymentOrderAPI = (paymentStatus: string, paymentRef: string) => {
-    return Promise.resolve({
-        data: null,
-        statusCode: 200,
-        message: 'Payment status updated'
+    const urlBackend = "/payments/notification-events";
+    return paymentAxios.post<IBackendRes<IPaymentNotificationEvent>>(urlBackend, {
+        paymentStatus,
+        paymentRef
     });
 }

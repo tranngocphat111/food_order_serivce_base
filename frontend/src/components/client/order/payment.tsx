@@ -109,7 +109,11 @@ const Payment = (props: IProps) => {
                     // Success - clear cart
                     localStorage.removeItem("carts");
                     setCarts([]);
-                    message.success('Đặt hàng thành công!');
+                    notification.success({
+                        message: 'Thanh toán thành công',
+                        description: `Mã thanh toán: ${paymentRes.paymentCode || paymentRes.transactionRef}. Đơn hàng của bạn đã được xác nhận.`,
+                        duration: 5
+                    });
                     setCurrentStep(2);
                 } else {
                     // Payment failed but order was created

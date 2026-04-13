@@ -24,7 +24,7 @@ public class CorsConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://192.168.1.153:3000",
-            "http://192.168.1.62:3000",
+            "http://192.168.1.79:3000",
             "http://192.168.1.62:5173",
                 "http://192.168.1.62:8085",
                 "http://192.168.1.153:4173",

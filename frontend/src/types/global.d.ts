@@ -30,6 +30,15 @@ declare global {
         message: string;
     }
 
+    interface ITokenVerifyResponse {
+        valid: boolean;
+        userId?: number;
+        username?: string;
+        email?: string;
+        role?: string;
+        message: string;
+    }
+
     interface ILogin {
         access_token: string;
         user: IUser;

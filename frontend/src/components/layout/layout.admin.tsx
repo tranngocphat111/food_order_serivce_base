@@ -1,20 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     AppstoreOutlined,
-    ExceptionOutlined,
+    CoffeeOutlined,
     HeartTwoTone,
-    TeamOutlined,
-    UserOutlined,
-    DollarCircleOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
+    ShoppingOutlined,
+    UserOutlined,
 } from '@ant-design/icons';
-import { Layout, Menu, Dropdown, Space, Avatar } from 'antd';
-import { Outlet, useLocation } from "react-router-dom";
-import { Link } from 'react-router-dom';
+import { Avatar, Button, Dropdown, Layout, Menu, Space, Tag } from 'antd';
+import { Navigate, Outlet, useLocation, Link, useNavigate } from "react-router-dom";
 import { useCurrentApp } from '../context/app.context';
 import type { MenuProps } from 'antd';
 import { logoutAPI } from '@/services/api';
+import { isAdminRole, normalizeRole } from '@/services/helper';
+import 'styles/admin.scss';
 type MenuItem = Required<MenuProps>['items'][number];
 
 const { Content, Footer, Sider } = Layout;
@@ -23,6 +23,7 @@ const { Content, Footer, Sider } = Layout;
 const LayoutAdmin = () => {
     const [collapsed, setCollapsed] = useState(false);
     const [activeMenu, setActiveMenu] = useState('');
+    const navigate = useNavigate();
     const {
         user, setUser, setIsAuthenticated, isAuthenticated,
         setCarts
@@ -38,38 +39,34 @@ const LayoutAdmin = () => {
 
         },
         {
-            label: <span>Manage Users</span>,
-            key: '/admin/user',
-            icon: <UserOutlined />,
-            children: [
-                {
-                    label: <Link to='/admin/user'>CRUD</Link>,
-                    key: '/admin/user',
-                    icon: <TeamOutlined />,
-                },
-            ]
+            label: <Link to='/admin/foods'>Foods</Link>,
+            key: '/admin/foods',
+            icon: <CoffeeOutlined />
         },
         {
-            label: <Link to='/admin/book'>Manage Books</Link>,
-            key: '/admin/book',
-            icon: <ExceptionOutlined />
-        },
-        {
-            label: <Link to='/admin/order'>Manage Orders</Link>,
-            key: '/admin/order',
-            icon: <DollarCircleOutlined />
+            label: <Link to='/admin/orders'>Orders</Link>,
+            key: '/admin/orders',
+            icon: <ShoppingOutlined />
         },
 
     ];
 
 
     useEffect(() => {
-        const active: any = items.find(item => location.pathname === (item!.key as any)) ?? "/admin";
-        setActiveMenu(active.key)
-    }, [location])
+        if (location.pathname.startsWith('/admin/orders') || location.pathname.startsWith('/admin/order')) {
+            setActiveMenu('/admin/orders');
+            return;
+        }
+
+        if (location.pathname.startsWith('/admin/foods') || location.pathname.startsWith('/admin/food') || location.pathname.startsWith('/admin/book')) {
+            setActiveMenu('/admin/foods');
+            return;
+        }
+
+        setActiveMenu('/admin');
+    }, [location.pathname]);
 
     const handleLogout = async () => {
-        //todo
         const res = await logoutAPI();
         if (res.data) {
             setUser(null);
@@ -77,16 +74,14 @@ const LayoutAdmin = () => {
             setIsAuthenticated(false);
             localStorage.removeItem("access_token");
             localStorage.removeItem("carts")
+            navigate('/login');
         }
     }
 
 
     const itemsDropdown = [
         {
-            label: <label
-                style={{ cursor: 'pointer' }}
-                onClick={() => alert("me")}
-            >Quản lý tài khoản</label>,
+            label: <span>Quản lý tài khoản</span>,
             key: 'account',
         },
         {
@@ -94,87 +89,92 @@ const LayoutAdmin = () => {
             key: 'home',
         },
         {
-            label: <label
-                style={{ cursor: 'pointer' }}
-                onClick={() => handleLogout()}
-            >Đăng xuất</label>,
+            label: <span style={{ cursor: 'pointer' }} onClick={() => handleLogout()}>Đăng xuất</span>,
             key: 'logout',
         },
 
     ];
 
-    const urlAvatar = `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${user?.avatar}`;
+    const hasAvatar = !!user?.avatar;
+    const urlAvatar = hasAvatar
+        ? `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${user?.avatar}`
+        : undefined;
 
     if (isAuthenticated === false) {
-        return (
-            <Outlet />
-        )
+        return <Navigate to="/login" replace />;
     }
 
-    const isAdminRoute = location.pathname.includes("admin");
-    if (isAuthenticated === true && isAdminRoute === true) {
-        const role = user?.role;
-        if (role === "USER") {
-            return (
-                <Outlet />
-            )
-        }
+    if (!isAdminRole(user?.role)) {
+        return <Navigate to="/" replace />;
     }
 
     return (
-        <>
-            <Layout
-                style={{ minHeight: '100vh' }}
-                className="layout-admin"
+        <Layout className="admin-shell">
+            <Sider
+                width={280}
+                theme="dark"
+                collapsible
+                collapsed={collapsed}
+                trigger={null}
             >
-                <Sider
-                    theme='light'
-                    collapsible
-                    collapsed={collapsed}
-                    onCollapse={(value) => setCollapsed(value)}>
-                    <div style={{ height: 32, margin: 16, textAlign: 'center' }}>
-                        Admin
+                <div className="admin-sidebar">
+                    <div className="admin-brand">
+                        <div className="admin-brand__logo">F</div>
+                        {!collapsed && (
+                            <div className="admin-brand__text">
+                                <strong>FoodFlow Admin</strong>
+                                <span>Operate faster, cleaner</span>
+                            </div>
+                        )}
                     </div>
+
                     <Menu
-                        // defaultSelectedKeys={[activeMenu]}
                         selectedKeys={[activeMenu]}
                         mode="inline"
                         items={items}
                         onClick={(e) => setActiveMenu(e.key)}
                     />
-                </Sider>
-                <Layout>
-                    <div className='admin-header' style={{
-                        height: "50px",
-                        borderBottom: "1px solid #ebebeb",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "0 15px",
+                </div>
+            </Sider>
 
-                    }}>
-                        <span>
-                            {React.createElement(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
-                                className: 'trigger',
-                                onClick: () => setCollapsed(!collapsed),
-                            })}
-                        </span>
+            <Layout className="admin-shell__body">
+                <div className='admin-topbar'>
+                    <div className="admin-topbar__title">
+                        <strong>
+                            {activeMenu === '/admin/orders'
+                                ? 'Quản lý đơn hàng'
+                                : activeMenu === '/admin/foods'
+                                    ? 'Quản lý món ăn'
+                                    : 'Bảng điều khiển'}
+                        </strong>
+                        <span>Giao diện quản trị mới, đồng bộ với toàn app</span>
+                    </div>
+                    <div className="admin-topbar__actions">
+                        <Button
+                            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                            onClick={() => setCollapsed(!collapsed)}
+                        >
+                            {collapsed ? 'Mở menu' : 'Thu gọn'}
+                        </Button>
                         <Dropdown menu={{ items: itemsDropdown }} trigger={['click']}>
-                            <Space style={{ cursor: "pointer" }}>
-                                <Avatar src={urlAvatar} />
-                                {user?.fullName}
+                            <Space style={{ cursor: 'pointer' }}>
+                                <Avatar src={urlAvatar} icon={!hasAvatar ? <UserOutlined /> : undefined} />
+                                <span>{user?.fullName || 'Administrator'}</span>
+                                <Tag color="orange">{normalizeRole(user?.role || 'ADMIN')}</Tag>
                             </Space>
                         </Dropdown>
                     </div>
-                    <Content style={{ padding: '15px' }}>
-                        <Outlet />
-                    </Content>
-                    <Footer style={{ padding: 0, textAlign: "center" }}>
-                        React Test Fresher &copy; Nguyễn Tấn Nghị - Made with <HeartTwoTone />
-                    </Footer>
-                </Layout>
+                </div>
+
+                <Content className="admin-content">
+                    <Outlet />
+                </Content>
+
+                <Footer style={{ padding: 16, textAlign: 'center', background: 'transparent', color: '#64748b' }}>
+                    FoodFlow Admin &copy; Made with <HeartTwoTone />
+                </Footer>
             </Layout>
-        </>
+        </Layout>
     );
 };
 

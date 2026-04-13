@@ -4,6 +4,7 @@ import type { GetProp, UploadFile, UploadProps } from 'antd';
 import dayjs from "dayjs";
 import { FORMATE_DATE_VN } from "@/services/helper";
 import { v4 as uuidv4 } from 'uuid';
+import { resolveFoodImageUrl } from '@/services/helper';
 type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0];
 
 interface IProps {
@@ -32,7 +33,7 @@ const DetailBook = (props: IProps) => {
                     uid: uuidv4(),
                     name: dataViewDetail.thumbnail,
                     status: 'done',
-                    url: `https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${dataViewDetail.imageUrl}`,
+                    url: resolveFoodImageUrl(dataViewDetail.imageUrl),
                 }
             }
             if (dataViewDetail.slider && dataViewDetail.slider.length > 0) {
@@ -41,7 +42,7 @@ const DetailBook = (props: IProps) => {
                         uid: uuidv4(),
                         name: item,
                         status: 'done',
-                        url: `https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${item}`,
+                        url: resolveFoodImageUrl(item),
                     })
                 })
             }

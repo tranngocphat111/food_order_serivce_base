@@ -1,7 +1,6 @@
 package iuh.fit.se.foodservices.controller;
 
 import iuh.fit.se.foodservices.entity.Foods;
-import iuh.fit.se.foodservices.entity.Foods;
 import iuh.fit.se.foodservices.repository.FoodRepository;
 import iuh.fit.se.foodservices.service.S3Service;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +15,10 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/foods")
+@CrossOrigin(
+    origins = {"http://192.168.1.79:3000", "http://localhost:3000"},
+    allowCredentials = "true"
+)
 public class FoodController {
 
     @Autowired
@@ -86,6 +89,10 @@ public class FoodController {
 
     @PostMapping("/{id}/image")
     public ResponseEntity<Foods> uploadFoodImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
         java.util.Optional<Foods> optionalFood = foodRepository.findById(id);
         if (!optionalFood.isPresent()) {
             return ResponseEntity.notFound().build();
@@ -101,11 +108,12 @@ public class FoodController {
                 } catch (Exception ignored) {
                 }
             }
+            
 
             // Upload new image
             String key = s3Service.uploadFile(file);
-            String url = s3Service.getFileUrl(key);
-            food.setImageUrl(url);
+            // Persist only S3 object key/filename. FE resolves full URL.
+            food.setImageUrl(key);
             food.setUpdatedAt(LocalDateTime.now());
             Foods saved = foodRepository.save(food);
             return ResponseEntity.ok(saved);
@@ -142,8 +150,11 @@ public class FoodController {
      */
     private void extractAndDeleteFromS3(String imageUrl) {
         try {
-            // Extract key from URL (key is the path after the domain)
-            String key = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+            // Supports both URL and plain key storage format.
+            String key = imageUrl;
+            if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+                key = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+            }
             s3Service.deleteFile(key);
         } catch (Exception e) {
             throw new RuntimeException("Failed to delete image from S3", e);

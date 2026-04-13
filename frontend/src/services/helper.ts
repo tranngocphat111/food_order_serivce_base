@@ -12,3 +12,25 @@ export const dateRangeValidate = (dateRange: any) => {
 
     return [startDate, endDate];
 };
+
+const FOOD_IMAGE_BUCKET_URL = (import.meta.env.VITE_FOOD_IMAGE_BUCKET_URL as string | undefined)
+    || "https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals";
+
+export const resolveFoodImageUrl = (imageValue?: string | null) => {
+    if (!imageValue) return "/default-food.png";
+
+    if (/^https?:\/\//i.test(imageValue)) {
+        return imageValue;
+    }
+
+    const normalized = imageValue.replace(/^\/+/, "");
+    const key = normalized.startsWith("meals/") ? normalized.slice(6) : normalized;
+    return `${FOOD_IMAGE_BUCKET_URL}/${key}`;
+};
+
+export const normalizeRole = (role?: string | null) => {
+    if (!role) return "USER";
+    return role.replace(/^ROLE_/, "").toUpperCase();
+};
+
+export const isAdminRole = (role?: string | null) => normalizeRole(role) === "ADMIN";

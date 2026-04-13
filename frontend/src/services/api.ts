@@ -35,7 +35,7 @@ export const registerAPI = (username: string, email: string, password: string, f
 // Verify Token API - User Service
 export const verifyTokenAPI = (token: string) => {
     const urlBackend = "/api/users/verify-token";
-    return userAxios.post<boolean>(urlBackend, token, {
+    return userAxios.post<ITokenVerifyResponse>(urlBackend, token, {
         headers: {
             'Content-Type': 'text/plain'
         }
@@ -64,13 +64,18 @@ export const fetchAccountAPI = () => {
 
 // Logout API - clear local storage
 export const logoutAPI = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('user');
-    return Promise.resolve({
-        data: null,
-        statusCode: 200,
-        message: 'Logged out successfully'
-    });
+    return userAxios.post('/api/users/logout', {})
+        .catch(() => null)
+        .finally(() => {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('carts');
+        })
+        .then(() => ({
+            data: true,
+            statusCode: 200,
+            message: 'Logged out successfully'
+        }));
 }
 
 // Get all users - User Service
@@ -127,11 +132,7 @@ export const deleteFoodAPI = (id: number) => {
 export const uploadFoodImageAPI = (foodId: number, file: File) => {
     const bodyFormData = new FormData();
     bodyFormData.append('file', file);
-    return foodAxios.post<IFood>(`/foods/${foodId}/image`, bodyFormData, {
-        headers: {
-            "Content-Type": "multipart/form-data",
-        },
-    });
+    return foodAxios.post<IFood>(`/foods/${foodId}/image`, bodyFormData);
 }
 
 // Delete food image

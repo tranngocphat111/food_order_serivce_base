@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { App, Divider, Drawer, Space, Table, Tag } from 'antd';
+import { App, Card, Divider, Drawer, Empty, Table, Tag, Typography } from 'antd';
 import type { TableProps } from 'antd';
 import dayjs from "dayjs";
 import { FORMATE_DATE_VN } from "@/services/helper";
@@ -110,16 +110,25 @@ const HistoryPage = () => {
     }, [])
 
     return (
-        <div style={{ margin: 50 }}>
-            <h3>Lịch sử đặt hàng</h3>
-            <Divider />
-            <Table
-                bordered
-                columns={columns}
-                dataSource={dataHistory}
-                rowKey="id"
-                loading={loading}
-            />
+        <div className="page-surface" style={{ padding: '24px 0' }}>
+            <div style={{ maxWidth: 1440, margin: '0 auto', padding: '0 16px' }}>
+            <Card className="admin-table-card" bordered={false}>
+                <Typography.Title level={3} style={{ marginTop: 0 }}>
+                    Lịch sử đặt hàng
+                </Typography.Title>
+                <Divider />
+                {dataHistory.length > 0 ? (
+                    <Table
+                        bordered
+                        columns={columns}
+                        dataSource={dataHistory}
+                        rowKey="id"
+                        loading={loading}
+                    />
+                ) : (
+                    <Empty description="Chưa có đơn hàng nào" />
+                )}
+            </Card>
             <Drawer
                 title="Chi tiết đơn hàng"
                 onClose={() => {
@@ -150,6 +159,7 @@ const HistoryPage = () => {
                     </>
                 )}
             </Drawer>
+            </div>
         </div>
     )
 }

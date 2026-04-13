@@ -1,55 +1,87 @@
 .homepage-container {
+    .ant-tabs-nav {
+        margin-bottom: 16px;
+    }
+
+    .ant-tabs-tab {
+        font-weight: 600;
+    }
+
+    .ant-checkbox-wrapper,
+    .ant-form-item-label > label,
+    .ant-rate-text {
+        color: var(--text-secondary);
+    }
+
+    .ant-pagination-item-active {
+        border-color: var(--brand-primary);
+    }
+
+    .ant-form,
+    .ant-tabs,
+    .ant-pagination {
+        color: var(--text-primary);
+    }
+
     .customize-row {
         display: flex;
         flex-wrap: wrap;
-        gap: 20px 10px; //gap 10px, có 5 items trên 1 row => 4*10 = 40px cần được bớt ở width. 40/5items = 8px => calc trừ đi 8px
+        gap: 18px;
 
         .column {
-            width: calc(20% - 8px);
+            width: calc(20% - 14px);
 
             &:hover {
-                box-shadow: 0 0.0625rem 20px 0 rgba(0, 0, 0, .05);
-                -webkit-transform: translateY(-0.0625rem);
-                transform: translateY(-0.0625rem);
+                box-shadow: 0 0.75rem 2rem rgba(15, 23, 42, 0.08);
+                transform: translateY(-3px);
             }
 
             .wrapper {
                 cursor: pointer;
-                box-shadow: 0 0.0625rem 0.125rem 0 rgba(0, 0, 0, .1);
-                border-radius: 0.125rem;
-                padding: .3rem;
+                border-radius: 18px;
+                padding: 0.75rem;
+                background: rgba(255, 255, 255, 0.9);
+                border: 1px solid var(--border-soft);
+                box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
 
                 .text {
-                    padding: 0.5rem 0;
-                    font-size: .75rem;
-                    height: 50px;
+                    padding: 0.6rem 0;
+                    font-size: 0.9rem;
+                    height: 56px;
                     display: -webkit-box;
                     -webkit-line-clamp: 2;
                     -webkit-box-orient: vertical;
                     overflow: hidden;
                     text-overflow: ellipsis;
+                    color: var(--text-primary);
+                    font-weight: 600;
                 }
 
                 .rating {
                     display: flex;
                     align-items: center;
                     gap: 10px;
+                    color: var(--text-secondary);
                 }
 
+                .price {
+                    color: var(--brand-primary);
+                    font-weight: 700;
+                }
             }
         }
 
-
         .thumbnail {
-            max-height: 200px;
-            max-width: 200px;
+            max-height: 210px;
+            max-width: 210px;
             margin: 0 auto;
 
             img {
-                max-width: 100%;
+                width: 100%;
                 max-height: 100%;
                 background-color: white;
-                object-fit: contain;
+                object-fit: cover;
+                border-radius: 16px;
             }
         }
 

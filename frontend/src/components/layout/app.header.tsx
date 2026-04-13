@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FaReact } from 'react-icons/fa'
 import { FiShoppingCart } from 'react-icons/fi';
 import { VscSearchFuzzy } from 'react-icons/vsc';
+import { UserOutlined } from '@ant-design/icons';
 import { Divider, Badge, Drawer, Avatar, Popover, Empty } from 'antd';
 import { Dropdown, Space } from 'antd';
 import { useNavigate } from 'react-router';
@@ -9,6 +10,7 @@ import './app.header.scss';
 import { Link } from 'react-router-dom';
 import { useCurrentApp } from 'components/context/app.context';
 import { logoutAPI } from '@/services/api';
+import { isAdminRole, resolveFoodImageUrl } from '@/services/helper';
 import ManageAccount from '../client/account';
 import { isMobile } from 'react-device-detect';
 
@@ -29,15 +31,13 @@ const AppHeader = (props: IProps) => {
     const navigate = useNavigate();
 
     const handleLogout = async () => {
-        //todo
-        const res = await logoutAPI();
-        if (res.data) {
-            setUser(null);
-            setCarts([]);
-            setIsAuthenticated(false);
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("carts");
-        }
+        await logoutAPI();
+        setUser(null);
+        setCarts([]);
+        setIsAuthenticated(false);
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("carts");
+        navigate('/login');
     }
 
     let items = [
@@ -61,14 +61,17 @@ const AppHeader = (props: IProps) => {
         },
 
     ];
-    if (user?.role === 'ADMIN') {
+    if (isAdminRole(user?.role)) {
         items.unshift({
             label: <Link to='/admin'>Trang quản trị</Link>,
             key: 'admin',
         })
     }
 
-    const urlAvatar = `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${user?.avatar}`;
+    const hasAvatar = !!user?.avatar;
+    const urlAvatar = hasAvatar
+        ? `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${user?.avatar}`
+        : undefined;
 
     const contentPopover = () => {
         return (
@@ -77,8 +80,8 @@ const AppHeader = (props: IProps) => {
                     {carts?.map((book, index) => {
                         return (
                             <div className='book' key={`book-${index}`}>
-                                <img src={`https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${book?.detail?.imageUrl}`} />
-                                <div>{book?.detail?.mainText}</div>
+                                <img src={resolveFoodImageUrl(book?.detail?.imageUrl)} alt={book?.detail?.name || 'Food'} />
+                                <div>{book?.detail?.name}</div>
                                 <div className='price'>
                                     {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(book?.detail?.price ?? 0)}
                                 </div>
@@ -109,7 +112,7 @@ const AppHeader = (props: IProps) => {
                         }}>☰</div>
                         <div className='page-header__logo'>
                             <span className='logo'>
-                                <span onClick={() => navigate('/')}> <FaReact className='rotate icon-react' />Nguyễn Tấn Nghị</span>
+                                <span onClick={() => navigate('/')}> <FaReact className='rotate icon-react' />FoodFlow</span>
 
                                 <VscSearchFuzzy className='icon-search' />
                             </span>
@@ -160,7 +163,7 @@ const AppHeader = (props: IProps) => {
                                     :
                                     <Dropdown menu={{ items }} trigger={['click']}>
                                         <Space >
-                                            <Avatar src={urlAvatar} />
+                                            <Avatar src={urlAvatar} icon={!hasAvatar ? <UserOutlined /> : undefined} />
                                             {user?.fullName}
                                         </Space>
                                     </Dropdown>

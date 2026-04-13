@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import './login.scss';
 import { useState } from 'react';
 import type { FormProps } from 'antd';
-import { loginAPI } from '@/services/api';
+import { loginAPI, verifyTokenAPI } from '@/services/api';
 import { useCurrentApp } from '@/components/context/app.context';
 
 type FieldType = {
@@ -27,12 +27,18 @@ const LoginPage = () => {
             
             // Handle response from user-service
             if (res?.success === true || res?.token) {
+                let verifyRes: ITokenVerifyResponse | null = null;
+                try {
+                    verifyRes = await verifyTokenAPI(res.token) as ITokenVerifyResponse;
+                } catch {
+                    verifyRes = null;
+                }
                 const user: IUser = {
-                    id: res.userId,
-                    username: res.username,
-                    email: res.email,
-                    fullName: res.fullName || res.username,
-                    role: res.role || 'USER',
+                    id: verifyRes?.userId ?? res.userId,
+                    username: verifyRes?.username ?? res.username,
+                    email: verifyRes?.email ?? res.email,
+                    fullName: res.fullName || verifyRes?.username || res.username,
+                    role: (verifyRes?.role || res.role || 'USER').replace('ROLE_', ''),
                     active: true
                 };
                 
@@ -41,6 +47,10 @@ const LoginPage = () => {
                 localStorage.setItem('access_token', res.token);
                 localStorage.setItem('user', JSON.stringify(user));
                 message.success('Đăng nhập tài khoản thành công!');
+                if (user.role === 'ADMIN') {
+                    navigate('/admin');
+                    return;
+                }
                 navigate('/');
             } else {
                 notification.error({

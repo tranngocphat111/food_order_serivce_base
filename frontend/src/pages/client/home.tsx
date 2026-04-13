@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import 'styles/home.scss';
 import { Image } from 'antd';
+import { resolveFoodImageUrl } from '@/services/helper';
 
 type FieldType = {
     range: {
@@ -198,11 +199,11 @@ const HomePage = () => {
 
     return (
         <>
-            <div style={{ background: '#efefef', padding: "20px 0" }}>
+            <div className="page-surface" style={{ padding: "24px 0" }}>
                 <div className="homepage-container" style={{ maxWidth: 1440, margin: '0 auto', overflow: "hidden" }}>
                     <Row gutter={[20, 20]}>
                         <Col md={4} sm={0} xs={0}>
-                            <div style={{ padding: "20px", background: '#fff', borderRadius: 5 }}>
+                            <div style={{ padding: "20px", background: 'rgba(255,255,255,0.92)', borderRadius: 18, border: '1px solid var(--border-soft)' }}>
                                 <div style={{ display: 'flex', justifyContent: "space-between" }}>
                                     <span> <FilterTwoTone />
                                         <span style={{ fontWeight: 500 }}> Bộ lọc tìm kiếm</span>
@@ -307,7 +308,7 @@ const HomePage = () => {
 
                         <Col md={20} xs={24} >
                             <Spin spinning={isLoading} tip="Loading...">
-                                <div style={{ padding: "20px", background: '#fff', borderRadius: 5 }}>
+                                <div style={{ padding: "20px", background: 'rgba(255,255,255,0.92)', borderRadius: 18, border: '1px solid var(--border-soft)' }}>
                                     <Row >
                                         <Tabs
                                             defaultActiveKey="sort=-sold"
@@ -333,7 +334,7 @@ const HomePage = () => {
                                                     <div className='wrapper'>
                                                         <div className='thumbnail'>
                                                             <img 
-                                                                src={`https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${item.imageUrl}` || '/default-food.png'} 
+                                                                src={resolveFoodImageUrl(item.imageUrl)} 
                                                                 alt={item.name}
                                                                 onError={(e) => {
                                                                     (e.target as HTMLImageElement).src = '/default-food.png';

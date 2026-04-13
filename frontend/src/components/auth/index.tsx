@@ -1,6 +1,7 @@
 import { Button, Result } from "antd";
 import { useCurrentApp } from "components/context/app.context";
 import { Link, useLocation } from "react-router-dom";
+import { isAdminRole } from "@/services/helper";
 
 interface IProps {
     children: React.ReactNode
@@ -24,8 +25,7 @@ const ProtectedRoute = (props: IProps) => {
 
     const isAdminRoute = location.pathname.includes("admin");
     if (isAuthenticated === true && isAdminRoute === true) {
-        const role = user?.role;
-        if (role === "USER") {
+        if (!isAdminRole(user?.role)) {
             return (
                 <Result
                     status="403"

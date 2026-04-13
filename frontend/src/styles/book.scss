@@ -11,7 +11,7 @@
 
     .title {
         margin: 5px 0;
-        color: #242424;
+        color: var(--text-primary);
         font-size: 24px;
         font-weight: 300;
         line-height: 32px;
@@ -24,8 +24,8 @@
     }
 
     .price {
-        border-radius: 4px;
-        background-color: rgb(250, 250, 250);
+        border-radius: 14px;
+        background-color: #fff8f2;
         padding: 25px;
         margin-bottom: 20px;
 
@@ -34,7 +34,7 @@
             line-height: 40px;
             margin-right: 8px;
             font-weight: 500;
-            color: #ee4d2d;
+            color: var(--brand-primary);
         }
     }
 
@@ -88,7 +88,7 @@
     }
 
     .left {
-        color: #757575;
+        color: var(--text-secondary);
         width: 110px;
         text-transform: capitalize;
         display: inline-block;
@@ -102,12 +102,12 @@
         button {
             overflow: visible;
             outline: 0;
-            background: #ff57221a;
-            color: #ee4d2d;
-            border: 1px solid #ee4d2d;
+            background: #fef1e8;
+            color: var(--brand-primary);
+            border: 1px solid var(--brand-primary);
             box-shadow: 0 1px 1px 0 rgba(0, 0, 0, .03);
             cursor: pointer;
-            border-radius: 3px;
+            border-radius: 10px;
 
             font-size: 16px;
             height: 48px;
@@ -118,13 +118,13 @@
                 position: relative;
                 overflow: visible;
                 outline: 0;
-                background: #ee4d2d;
+                background: var(--brand-primary);
             }
         }
 
         .cart {
             &:hover {
-                background: #ffc5b22e;
+                background: #ffe1d1;
             }
 
             span {
@@ -134,7 +134,7 @@
 
         .now {
             &:hover {
-                background: #f05d40;
+                background: #dc5f22;
             }
         }
     }
@@ -143,7 +143,7 @@
 
 .modal-gallery {
     .active {
-        border: 2px solid #ee4d2d;
+        border: 2px solid var(--brand-primary);
         position: absolute;
         width: 100px;
         height: 100px;

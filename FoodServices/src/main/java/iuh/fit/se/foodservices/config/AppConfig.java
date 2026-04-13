@@ -31,11 +31,14 @@ public class AppConfig implements WebMvcConfigurer {
      */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        String[] origins = allowedOrigins.split(",");
+        String[] origins = java.util.Arrays.stream(allowedOrigins.split(","))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .toArray(String[]::new);
         String[] methods = allowedMethods.split(",");
 
         registry.addMapping("/**")
-                .allowedOriginPatterns("*")
+            .allowedOrigins(origins)
                 .allowedMethods(methods)
                 .allowedHeaders(allowedHeaders)
                 .allowCredentials(allowCredentials)

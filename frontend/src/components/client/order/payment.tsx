@@ -7,6 +7,7 @@ import { useCurrentApp } from '@/components/context/app.context';
 import type { FormProps } from 'antd';
 import { createOrderAPI, createPaymentAPI } from '@/services/api';
 import { isMobile } from 'react-device-detect';
+import { resolveFoodImageUrl } from '@/services/helper';
 
 const { TextArea } = Input;
 
@@ -158,7 +159,7 @@ const Payment = (props: IProps) => {
                                     <>
                                         <div className='book-content'>
                                             <img 
-                                                src={`https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${item?.detail?.imageUrl}` || '/default-food.png'} 
+                                                src={resolveFoodImageUrl(item?.detail?.imageUrl)} 
                                                 alt={item?.detail?.name}
                                                 onError={(e) => {
                                                     (e.target as HTMLImageElement).src = '/default-food.png';
@@ -190,7 +191,7 @@ const Payment = (props: IProps) => {
                                         <div>{item?.detail?.name}</div>
                                         <div className='book-content ' style={{ width: "100%" }}>
                                             <img 
-                                                src={`https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${item?.detail?.imageUrl}` || '/default-food.png'} 
+                                                src={resolveFoodImageUrl(item?.detail?.imageUrl)} 
                                                 alt={item?.detail?.name}
                                                 onError={(e) => {
                                                     (e.target as HTMLImageElement).src = '/default-food.png';

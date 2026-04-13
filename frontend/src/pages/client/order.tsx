@@ -11,7 +11,7 @@ const OrderPage = () => {
     const [currentStep, setCurrentStep] = useState<number>(0);
 
     return (
-        <div style={{ background: '#efefef', padding: "20px 0" }}>
+        <div className="page-surface" style={{ padding: "24px 0" }}>
             <div className="order-container" style={{ maxWidth: 1440, margin: '0 auto' }}>
                 <Breadcrumb
                     separator=">"

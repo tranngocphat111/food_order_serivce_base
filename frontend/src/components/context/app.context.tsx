@@ -1,4 +1,4 @@
-import { fetchAccountAPI, verifyTokenAPI } from "@/services/api";
+import { verifyTokenAPI } from "@/services/api";
 import { createContext, useContext, useEffect, useState } from "react";
 import PacmanLoader from "react-spinners/PacmanLoader";
 
@@ -34,25 +34,28 @@ export const AppProvider = (props: TProps) => {
 
             if (token && userStr) {
                 try {
-                    // Verify token with backend
-                    const isValid = await verifyTokenAPI(token);
-                    
-                    if (isValid === true || (isValid as any)?.data === true) {
-                        const savedUser = JSON.parse(userStr);
-                        setUser(savedUser);
+                    const savedUser = JSON.parse(userStr) as IUser;
+                    const verifyResult = await verifyTokenAPI(token) as ITokenVerifyResponse;
+
+                    if (verifyResult?.valid) {
+                        setUser({
+                            ...savedUser,
+                            id: verifyResult.userId ?? savedUser.id,
+                            username: verifyResult.username ?? savedUser.username,
+                            email: verifyResult.email ?? savedUser.email,
+                            role: verifyResult.role ?? savedUser.role ?? 'USER'
+                        });
                         setIsAuthenticated(true);
-                        
+
                         if (cartsStr) {
                             setCarts(JSON.parse(cartsStr));
                         }
                     } else {
-                        // Token invalid, clear storage
                         localStorage.removeItem('access_token');
                         localStorage.removeItem('user');
+                        localStorage.removeItem('carts');
                     }
                 } catch (error) {
-                    // If verification fails, still try to use local data
-                    // (backend might be temporarily unavailable)
                     const savedUser = JSON.parse(userStr);
                     setUser(savedUser);
                     setIsAuthenticated(true);

@@ -19,7 +19,7 @@ spring:
 
 integration:
   order-service:
-    base-url: http://192.168.1.79:8083
+    base-url: http://192.168.1.82:8083
     update-status-path: /orders/{orderId}/status
     get-order-path: /orders/{orderId}
   notification:
@@ -35,3 +35,4 @@ management:
     web:
       exposure:
         include: health,info
+  

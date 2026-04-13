@@ -10,17 +10,17 @@ import AboutPage from 'pages/client/about';
 import LoginPage from 'pages/client/auth/login';
 import RegisterPage from 'pages/client/auth/register';
 import 'styles/global.scss'
+import 'styles/admin.scss'
 import HomePage from 'pages/client/home';
 import { App, ConfigProvider } from 'antd';
 import { AppProvider } from 'components/context/app.context';
 import ProtectedRoute from '@/components/auth';
-import DashBoardPage from 'pages/admin/dashboard';
-import ManageBookPage from 'pages/admin/manage.book';
-import ManageOrderPage from 'pages/admin/manage.order';
-import ManageUserPage from 'pages/admin/manage.user';
 import LayoutAdmin from 'components/layout/layout.admin';
 import OrderPage from 'pages/client/order';
 import HistoryPage from 'pages/client/history';
+import AdminDashboardPage from 'pages/admin/dashboard';
+import AdminFoodPage from 'pages/admin/manage.food';
+import AdminOrderPage from 'pages/admin/manage.order';
 
 import viVN from 'antd/locale/vi_VN';
 import ReturnURLPage from 'components/client/order/return.url';
@@ -78,52 +78,23 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: (
-          <ProtectedRoute>
-            <DashBoardPage />
-          </ProtectedRoute>
-        )
+        element: <AdminDashboardPage />
+      },
+      {
+        path: "foods",
+        element: <AdminFoodPage />
       },
       {
         path: "food",
-        element: (
-          <ProtectedRoute>
-            <ManageBookPage />
-          </ProtectedRoute>
-        )
+        element: <AdminFoodPage />
       },
       {
-        path: "book",
-        element: (
-          <ProtectedRoute>
-            <ManageBookPage />
-          </ProtectedRoute>
-        )
+        path: "orders",
+        element: <AdminOrderPage />
       },
       {
         path: "order",
-        element: (
-          <ProtectedRoute>
-            <ManageOrderPage />
-          </ProtectedRoute>
-        )
-      },
-
-      {
-        path: "user",
-        element: (
-          <ProtectedRoute>
-            <ManageUserPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "/admin",
-        element: (
-          <ProtectedRoute>
-            <div>admin page</div>
-          </ProtectedRoute>
-        ),
+        element: <AdminOrderPage />
       },
 
     ]
@@ -143,7 +114,37 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App>
       <AppProvider>
-        <ConfigProvider locale={viVN}>
+        <ConfigProvider
+          locale={viVN}
+          theme={{
+            token: {
+              colorPrimary: '#ef6c2f',
+              colorInfo: '#ef6c2f',
+              colorSuccess: '#2f9e5a',
+              colorWarning: '#d98a27',
+              borderRadius: 12,
+              fontFamily: 'Inter, Segoe UI, Helvetica Neue, Arial, sans-serif'
+            },
+            components: {
+              Layout: {
+                bodyBg: '#f8f1e9'
+              },
+              Tabs: {
+                itemActiveColor: '#ef6c2f',
+                itemSelectedColor: '#ef6c2f',
+                inkBarColor: '#ef6c2f'
+              },
+              Button: {
+                colorPrimary: '#ef6c2f',
+                colorPrimaryHover: '#dc5f22'
+              },
+              Pagination: {
+                colorPrimary: '#ef6c2f',
+                colorPrimaryHover: '#dc5f22'
+              }
+            }
+          }}
+        >
           <RouterProvider router={router} />
         </ConfigProvider>
       </AppProvider>

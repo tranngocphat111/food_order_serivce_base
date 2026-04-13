@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useCurrentApp } from '@/components/context/app.context';
 import 'styles/order.scss';
 import { isMobile } from 'react-device-detect';
+import { resolveFoodImageUrl } from '@/services/helper';
 
 interface IProps {
     setCurrentStep: (v: number) => void;
@@ -66,9 +67,8 @@ const OrderDetail = (props: IProps) => {
     }
 
     return (
-        <div style={{ background: '#efefef', padding: "20px 0" }}>
-            <div className="order-container" style={{ maxWidth: 1440, margin: '0 auto', overflow: "hidden" }}>
-                <Row gutter={[20, 20]}>
+        <>
+            <Row gutter={[20, 20]}>
                     <Col md={18} xs={24}>
                         {carts?.map((item, index) => {
                             const currentFoodPrice = item?.detail?.price ?? 0;
@@ -80,7 +80,7 @@ const OrderDetail = (props: IProps) => {
                                         <>
                                             <div className='book-content'>
                                                 <img 
-                                                    src={`https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${item?.detail?.imageUrl}` || '/default-food.png'} 
+                                                    src={resolveFoodImageUrl(item?.detail?.imageUrl)} 
                                                     alt={item?.detail?.name}
                                                     onError={(e) => {
                                                         (e.target as HTMLImageElement).src = '/default-food.png';
@@ -117,7 +117,7 @@ const OrderDetail = (props: IProps) => {
                                             <div>{item?.detail?.name}</div>
                                             <div className='book-content ' style={{ width: "100%" }}>
                                                 <img 
-                                                    src={`https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${item?.detail?.imageUrl}` || '/default-food.png'} 
+                                                    src={resolveFoodImageUrl(item?.detail?.imageUrl)} 
                                                     alt={item?.detail?.name}
                                                     onError={(e) => {
                                                         (e.target as HTMLImageElement).src = '/default-food.png';
@@ -180,8 +180,7 @@ const OrderDetail = (props: IProps) => {
                         </div>
                     </Col>
                 </Row>
-            </div>
-        </div>
+        </>
     )
 }
 

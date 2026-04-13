@@ -7,12 +7,13 @@ import 'styles/book.scss';
 import ModalGallery from './modal.gallery';
 import { useCurrentApp } from '@/components/context/app.context';
 import { Link, useNavigate } from 'react-router-dom';
+import { resolveFoodImageUrl } from '@/services/helper';
 
 interface IProps {
     currentFood: IFood | null;
 }
 
-type UserAction = "MINUS" | "PLUS"
+type UserAction = 'MINUS' | 'PLUS';
 
 const BookDetail = (props: IProps) => {
     const { currentFood } = props;
@@ -21,7 +22,7 @@ const BookDetail = (props: IProps) => {
         thumbnail: string;
         originalClass: string;
         thumbnailClass: string;
-    }[]>([])
+    }[]>([]);
 
     const [isOpenModalGallery, setIsOpenModalGallery] = useState<boolean>(false);
     const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -34,71 +35,71 @@ const BookDetail = (props: IProps) => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (currentFood) {
-            // Build images from food imageUrl
-            const images = [];
-            if (currentFood.imageUrl) {
-                images.push({
-                    original: `https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${currentFood.imageUrl}`,
-                    thumbnail: `https://food-service-images.s3.ap-southeast-1.amazonaws.com/meals/${currentFood.imageUrl}`,
-                    originalClass: "original-image",
-                    thumbnailClass: "thumbnail-image"
-                });
-            } else {
-                // Default placeholder image
-                images.push({
-                    original: '/default-food.png',
-                    thumbnail: '/default-food.png',
-                    originalClass: "original-image",
-                    thumbnailClass: "thumbnail-image"
-                });
-            }
-            setImageGallery(images);
+        if (!currentFood) return;
+
+        const images = [];
+        if (currentFood.imageUrl) {
+            images.push({
+                original: resolveFoodImageUrl(currentFood.imageUrl),
+                thumbnail: resolveFoodImageUrl(currentFood.imageUrl),
+                originalClass: 'original-image',
+                thumbnailClass: 'thumbnail-image'
+            });
+        } else {
+            images.push({
+                original: '/default-food.png',
+                thumbnail: '/default-food.png',
+                originalClass: 'original-image',
+                thumbnailClass: 'thumbnail-image'
+            });
         }
-    }, [currentFood])
+
+        setImageGallery(images);
+        setCurrentQuantity(1);
+    }, [currentFood]);
 
     const handleOnClickImage = () => {
         setIsOpenModalGallery(true);
-        setCurrentIndex(refGallery?.current?.getCurrentIndex() ?? 0)
-    }
+        setCurrentIndex(refGallery?.current?.getCurrentIndex() ?? 0);
+    };
 
     const handleChangeButton = (type: UserAction) => {
+        if (!currentFood) return;
+
         if (type === 'MINUS') {
             if (currentQuantity - 1 <= 0) return;
             setCurrentQuantity(currentQuantity - 1);
         }
-        if (type === 'PLUS' && currentFood) {
-            if (currentQuantity === currentFood.stockQty) return; // max
+
+        if (type === 'PLUS') {
+            if (currentQuantity === currentFood.stockQty) return;
             setCurrentQuantity(currentQuantity + 1);
         }
-    }
+    };
 
     const handleChangeInput = (value: string) => {
-        if (!isNaN(+value)) {
-            if (+value > 0 && currentFood && +value <= currentFood.stockQty) {
-                setCurrentQuantity(+value);
-            }
+        if (!currentFood) return;
+        if (!isNaN(+value) && +value > 0 && +value <= currentFood.stockQty) {
+            setCurrentQuantity(+value);
         }
-    }
+    };
 
     const handleAddToCart = (isBuyNow = false) => {
         if (!user) {
-            message.error("Bạn cần đăng nhập để thực hiện tính năng này.")
+            message.error('Bạn cần đăng nhập để thực hiện tính năng này.');
             return;
         }
 
         if (!currentFood?.isAvailable) {
-            message.error("Món ăn hiện không còn hàng.")
+            message.error('Món ăn hiện không còn hàng.');
             return;
         }
 
-        // Update localStorage
-        const cartStorage = localStorage.getItem("carts");
+        const cartStorage = localStorage.getItem('carts');
         if (cartStorage && currentFood) {
             const carts = JSON.parse(cartStorage) as ICart[];
 
-            // Check if exists
-            let isExistIndex = carts.findIndex(c => c.id === currentFood?.id);
+            const isExistIndex = carts.findIndex((c) => c.id === currentFood.id);
             if (isExistIndex > -1) {
                 carts[isExistIndex].quantity = carts[isExistIndex].quantity + currentQuantity;
             } else {
@@ -106,44 +107,43 @@ const BookDetail = (props: IProps) => {
                     quantity: currentQuantity,
                     id: currentFood.id,
                     detail: currentFood
-                })
+                });
             }
 
-            localStorage.setItem("carts", JSON.stringify(carts));
+            localStorage.setItem('carts', JSON.stringify(carts));
             setCarts(carts);
         } else {
-            // Create new cart
             const data: ICart[] = [{
-                id: currentFood?.id!,
+                id: currentFood.id,
                 quantity: currentQuantity,
-                detail: currentFood!
-            }]
-            localStorage.setItem("carts", JSON.stringify(data))
+                detail: currentFood
+            }];
+            localStorage.setItem('carts', JSON.stringify(data));
             setCarts(data);
         }
 
         if (isBuyNow) {
-            navigate("/order")
+            navigate('/order');
         } else {
-            message.success("Thêm món ăn vào giỏ hàng thành công.")
+            message.success('Thêm món ăn vào giỏ hàng thành công.');
         }
-    }
+    };
 
     return (
-        <div style={{ background: '#efefef', padding: "20px 0" }}>
-            <div className='view-detail-book' style={{ maxWidth: 1440, margin: '0 auto', minHeight: "calc(100vh - 150px)" }}>
+        <div className="page-surface" style={{ padding: '24px 0' }}>
+            <div className='view-detail-book' style={{ maxWidth: 1440, margin: '0 auto', minHeight: 'calc(100vh - 150px)' }}>
                 <Breadcrumb
                     separator=">"
                     items={[
                         {
-                            title: <Link to={"/"}>Trang Chủ</Link>,
+                            title: <Link to={'/'}>Trang Chủ</Link>,
                         },
                         {
                             title: 'Chi tiết món ăn',
                         },
                     ]}
                 />
-                <div style={{ padding: "20px", background: '#fff', borderRadius: 5 }}>
+                <div style={{ padding: '20px', background: 'rgba(255,255,255,0.92)', borderRadius: 20, border: '1px solid var(--border-soft)', boxShadow: '0 16px 36px rgba(15, 23, 42, 0.05)' }}>
                     <Row gutter={[20, 20]}>
                         <Col md={10} sm={0} xs={0}>
                             <ImageGallery
@@ -153,8 +153,8 @@ const BookDetail = (props: IProps) => {
                                 showFullscreenButton={false}
                                 renderLeftNav={() => <></>}
                                 renderRightNav={() => <></>}
-                                slideOnThumbnailOver={true}
-                                onClick={() => handleOnClickImage()}
+                                slideOnThumbnailOver
+                                onClick={handleOnClickImage}
                             />
                         </Col>
                         <Col md={14} sm={24}>
@@ -209,14 +209,14 @@ const BookDetail = (props: IProps) => {
                                 <div className='quantity'>
                                     <span className='left'>Số lượng</span>
                                     <span className='right'>
-                                        <button onClick={() => handleChangeButton('MINUS')} ><MinusOutlined /></button>
+                                        <button onClick={() => handleChangeButton('MINUS')}><MinusOutlined /></button>
                                         <input onChange={(event) => handleChangeInput(event.target.value)} value={currentQuantity} />
                                         <button onClick={() => handleChangeButton('PLUS')}><PlusOutlined /></button>
                                     </span>
                                 </div>
                                 <div className='buy'>
-                                    <button 
-                                        className='cart' 
+                                    <button
+                                        className='cart'
                                         onClick={() => handleAddToCart()}
                                         disabled={!currentFood?.isAvailable}
                                     >
@@ -241,10 +241,10 @@ const BookDetail = (props: IProps) => {
                 setIsOpen={setIsOpenModalGallery}
                 currentIndex={currentIndex}
                 items={imageGallery}
-                title={currentFood?.name ?? ""}
+                title={currentFood?.name ?? ''}
             />
         </div>
-    )
-}
+    );
+};
 
 export default BookDetail;
